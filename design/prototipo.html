@@ -1,0 +1,732 @@
+<title>Bolsillo · Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    /* --- Light palette (deliberately chosen, sage-biased neutrals) --- */
+    --ground:#E8ECE4;
+    --canvas-1:#EAEEE6;
+    --canvas-2:#DDE4D7;
+    --surface:#FFFFFF;
+    --surface-2:#F4F6F1;
+    --line:#DCE2D6;
+    --ink:#16231D;
+    --ink-2:#4A5851;
+    --ink-3:#7C8880;
+    --brand:#14634F;
+    --brand-ink:#0C4A3A;
+    --brand-soft:#E1EFE8;
+    --accent:#E8A23C;
+    --accent-soft:#FBEDD4;
+    --income:#2E9E6B;
+    --expense:#D65B45;
+    --expense-soft:#FBE6E1;
+    --on-brand:#F3FAF6;
+    --shadow:0 1px 2px rgba(15,40,30,.05), 0 12px 30px -12px rgba(15,40,30,.18);
+    --shadow-lift:0 24px 60px -20px rgba(12,40,30,.45);
+    --r-lg:26px; --r-md:18px; --r-sm:12px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --ground:#0B100D;
+      --canvas-1:#10151140;
+      --canvas-2:#161C17;
+      --surface:#161E19;
+      --surface-2:#1E2721;
+      --line:#28322B;
+      --ink:#E8EEE9;
+      --ink-2:#A9B5AD;
+      --ink-3:#788178;
+      --brand:#4FBF9C;
+      --brand-ink:#8FE0C6;
+      --brand-soft:#17352B;
+      --accent:#F1B25A;
+      --accent-soft:#3A2E17;
+      --income:#4FBF8B;
+      --expense:#F07A63;
+      --expense-soft:#3A211C;
+      --on-brand:#08130E;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -14px rgba(0,0,0,.6);
+      --shadow-lift:0 26px 64px -18px rgba(0,0,0,.75);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0B100D;
+    --canvas-1:#10151140;
+    --canvas-2:#161C17;
+    --surface:#161E19;
+    --surface-2:#1E2721;
+    --line:#28322B;
+    --ink:#E8EEE9;
+    --ink-2:#A9B5AD;
+    --ink-3:#788178;
+    --brand:#4FBF9C;
+    --brand-ink:#8FE0C6;
+    --brand-soft:#17352B;
+    --accent:#F1B25A;
+    --accent-soft:#3A2E17;
+    --income:#4FBF8B;
+    --expense:#F07A63;
+    --expense-soft:#3A211C;
+    --on-brand:#08130E;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -14px rgba(0,0,0,.6);
+    --shadow-lift:0 26px 64px -18px rgba(0,0,0,.75);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:"Plus Jakarta Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1100px 620px at 82% -8%, var(--canvas-2), transparent 60%),
+      radial-gradient(900px 520px at 8% 108%, var(--canvas-2), transparent 55%),
+      var(--ground);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .tnum{font-variant-numeric:tabular-nums}
+  .disp{font-family:"Bricolage Grotesque",serif}
+
+  /* ---------- Page shell ---------- */
+  .wrap{max-width:1120px;margin:0 auto;padding:40px 22px 72px}
+  .masthead{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:34px}
+  .brandline{display:flex;align-items:center;gap:13px}
+  .logo{width:44px;height:44px;border-radius:13px;background:linear-gradient(150deg,var(--brand),var(--brand-ink));display:grid;place-items:center;box-shadow:var(--shadow)}
+  .logo svg{width:24px;height:24px}
+  .masthead h1{font-family:"Bricolage Grotesque",serif;font-weight:700;font-size:26px;margin:0;letter-spacing:-.02em}
+  .masthead p{margin:2px 0 0;color:var(--ink-2);font-size:13.5px}
+  .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--brand);font-weight:700}
+  .theme-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center;box-shadow:var(--shadow)}
+  .theme-btn:hover{border-color:var(--brand)}
+  .theme-btn svg{width:16px;height:16px}
+
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:40px;align-items:start}
+  @media(max-width:900px){.stage{grid-template-columns:1fr}}
+
+  .phone-hold{display:flex;justify-content:center}
+  /* ---------- Phone ---------- */
+  .phone{
+    width:390px;max-width:100%;height:800px;position:relative;
+    background:var(--surface);border-radius:52px;
+    box-shadow:var(--shadow-lift);
+    border:1px solid var(--line);
+    padding:13px;
+  }
+  .bezel{
+    position:absolute;inset:13px;border-radius:40px;overflow:hidden;
+    background:var(--surface);display:flex;flex-direction:column;
+  }
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-size:13px;font-weight:600;flex:0 0 auto;color:var(--ink);background:transparent;z-index:5}
+  .statusbar .dots{display:flex;gap:5px;align-items:center}
+  .statusbar .dots svg{width:16px;height:16px}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:118px;height:26px;background:var(--ink);border-radius:0 0 16px 16px;opacity:.9;z-index:6}
+  :root[data-theme="dark"] .notch{background:#000}
+
+  .screens{position:relative;flex:1 1 auto;overflow:hidden}
+  .screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:6px 18px 106px;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .32s ease, transform .32s ease}
+  .screen.active{opacity:1;transform:none;pointer-events:auto}
+  .screen::-webkit-scrollbar{width:0}
+
+  .scr-head{padding:8px 2px 14px}
+  .scr-kicker{font-size:12px;color:var(--ink-3);font-weight:600}
+  .scr-title{font-family:"Bricolage Grotesque",serif;font-size:23px;font-weight:700;letter-spacing:-.02em;margin:2px 0 0}
+
+  /* ---- Home ---- */
+  .balcard{background:linear-gradient(155deg,var(--brand),var(--brand-ink));color:var(--on-brand);border-radius:var(--r-lg);padding:20px 20px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+  .balcard .ring{position:absolute;right:-40px;top:-46px;width:170px;height:170px;border-radius:50%;border:26px solid rgba(255,255,255,.08)}
+  .balcard .lbl{font-size:12px;opacity:.85;font-weight:600;display:flex;align-items:center;gap:7px}
+  .balcard .amount{font-family:"Bricolage Grotesque",serif;font-size:38px;font-weight:700;letter-spacing:-.02em;margin:7px 0 2px}
+  .balcard .sub{font-size:12.5px;opacity:.82}
+  .balcard .flowrow{display:flex;gap:10px;margin-top:16px}
+  .flowchip{flex:1;background:rgba(255,255,255,.12);border-radius:14px;padding:10px 12px;backdrop-filter:blur(2px)}
+  .flowchip .k{font-size:11px;opacity:.85;display:flex;align-items:center;gap:6px}
+  .flowchip .v{font-family:"Bricolage Grotesque",serif;font-size:17px;font-weight:600;margin-top:3px}
+  .flowchip svg{width:13px;height:13px}
+
+  .sec-h{display:flex;align-items:center;justify-content:space-between;margin:22px 2px 11px}
+  .sec-h h3{font-size:14.5px;font-weight:700;margin:0}
+  .sec-h a{font-size:12.5px;color:var(--brand);font-weight:600;text-decoration:none}
+
+  .accounts{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none}
+  .accounts::-webkit-scrollbar{display:none}
+  .acct{flex:0 0 132px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:13px}
+  .acct .ai{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;margin-bottom:9px}
+  .acct .an{font-size:12px;color:var(--ink-2);font-weight:600}
+  .acct .av{font-family:"Bricolage Grotesque",serif;font-size:16px;font-weight:600;margin-top:2px}
+  .acct svg{width:16px;height:16px}
+
+  .txlist{display:flex;flex-direction:column;gap:2px}
+  .tx{display:flex;align-items:center;gap:13px;padding:11px 6px;border-radius:14px}
+  .tx:hover{background:var(--surface-2)}
+  .tx .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto}
+  .tx .ic svg{width:19px;height:19px}
+  .tx .mid{flex:1;min-width:0}
+  .tx .nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx .mt{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .tx .amt{font-family:"Bricolage Grotesque",serif;font-size:14.5px;font-weight:600;white-space:nowrap}
+  .amt.out{color:var(--ink)}
+  .amt.in{color:var(--income)}
+  .daylabel{font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:14px 6px 4px}
+
+  /* icon tints */
+  .t-green{background:var(--brand-soft);color:var(--brand)}
+  .t-amber{background:var(--accent-soft);color:var(--accent)}
+  .t-red{background:var(--expense-soft);color:var(--expense)}
+  .t-blue{background:#E2ECF7;color:#3E74B8}
+  :root[data-theme="dark"] .t-blue{background:#182A3B;color:#7FB2E6}
+  :root:not([data-theme="light"]){@media(prefers-color-scheme:dark){.t-blue{background:#182A3B;color:#7FB2E6}}}
+  .t-violet{background:#EDE6F7;color:#7C5CC2}
+  :root[data-theme="dark"] .t-violet{background:#241C39;color:#B49BE8}
+  :root:not([data-theme="light"]){@media(prefers-color-scheme:dark){.t-violet{background:#241C39;color:#B49BE8}}}
+
+  /* ---- Budget cards ---- */
+  .bigmeter{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px}
+  .bigmeter .top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px}
+  .bigmeter .lab{font-size:12.5px;color:var(--ink-2);font-weight:600}
+  .bigmeter .big{font-family:"Bricolage Grotesque",serif;font-size:28px;font-weight:700;letter-spacing:-.02em}
+  .bigmeter .of{font-size:12.5px;color:var(--ink-3)}
+  .track{height:11px;border-radius:99px;background:var(--line);overflow:hidden}
+  .fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--income))}
+  .fill.warn{background:linear-gradient(90deg,var(--accent),#E9803C)}
+  .fill.over{background:linear-gradient(90deg,#E9803C,var(--expense))}
+
+  .budget{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 15px;box-shadow:var(--shadow);margin-bottom:11px}
+  .budget .row1{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+  .budget .bi{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}
+  .budget .bi svg{width:17px;height:17px}
+  .budget .bn{flex:1;font-size:13.5px;font-weight:600}
+  .budget .bp{font-size:12px;color:var(--ink-2);text-align:right}
+  .budget .bp b{font-family:"Bricolage Grotesque",serif;color:var(--ink);font-size:13.5px}
+  .pill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:99px;display:inline-block;margin-top:3px}
+  .pill.ok{background:var(--brand-soft);color:var(--brand)}
+  .pill.warn{background:var(--accent-soft);color:#C77C1E}
+  :root[data-theme="dark"] .pill.warn{color:var(--accent)}
+  .pill.over{background:var(--expense-soft);color:var(--expense)}
+
+  /* ---- Reportes ---- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .card h4{margin:0 0 3px;font-size:14px;font-weight:700}
+  .card .csub{font-size:12px;color:var(--ink-3);margin-bottom:12px}
+  .donutwrap{display:flex;align-items:center;gap:16px}
+  .donut{width:132px;height:132px;flex:0 0 auto}
+  .donut .center-v{font-family:"Bricolage Grotesque",serif;font-weight:700}
+  .legend{flex:1;display:flex;flex-direction:column;gap:9px}
+  .lg{display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .lg .sw{width:11px;height:11px;border-radius:4px;flex:0 0 auto}
+  .lg .ln{flex:1;color:var(--ink-2)}
+  .lg .lv{font-family:"Bricolage Grotesque",serif;font-weight:600;font-size:12.5px}
+  .bars{display:flex;align-items:flex-end;gap:9px;height:128px;padding-top:6px}
+  .bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end}
+  .bcol .bar{width:100%;max-width:26px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,var(--brand),var(--brand-ink));min-height:6px}
+  .bcol.hl .bar{background:linear-gradient(180deg,var(--accent),#E1852E)}
+  .bcol .bl{font-size:10.5px;color:var(--ink-3);font-weight:600}
+
+  /* ---- Metas ---- */
+  .goal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:15px;box-shadow:var(--shadow);margin-bottom:12px;position:relative;overflow:hidden}
+  .goal .gtop{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+  .goal .gemoji{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:var(--surface-2)}
+  .goal .gname{font-size:14px;font-weight:700}
+  .goal .gsub{font-size:11.5px;color:var(--ink-3)}
+  .goal .gnums{margin-left:auto;text-align:right}
+  .goal .gnow{font-family:"Bricolage Grotesque",serif;font-weight:700;font-size:15px}
+  .goal .gtot{font-size:11px;color:var(--ink-3)}
+
+  /* ---- Tarjeta ---- */
+  .creditcard{border-radius:22px;padding:20px;color:#fff;background:linear-gradient(135deg,#1B2B4A,#2E4576 55%,#3C5C93);box-shadow:var(--shadow);position:relative;overflow:hidden;margin-bottom:16px}
+  .creditcard .cc-ring{position:absolute;right:-30px;bottom:-50px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .creditcard .cc-top{display:flex;justify-content:space-between;align-items:center}
+  .creditcard .cc-brand{font-weight:700;letter-spacing:.02em}
+  .creditcard .cc-chip{width:34px;height:26px;border-radius:6px;background:linear-gradient(135deg,#E8C87A,#B8912F);margin:20px 0 14px}
+  .creditcard .cc-num{font-family:"Bricolage Grotesque",serif;font-size:17px;letter-spacing:.14em}
+  .creditcard .cc-foot{display:flex;justify-content:space-between;margin-top:15px;font-size:11px;opacity:.9}
+  .datesrow{display:flex;gap:11px;margin-bottom:14px}
+  .datebox{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:13px;box-shadow:var(--shadow)}
+  .datebox .dk{font-size:11px;color:var(--ink-3);font-weight:600;display:flex;gap:6px;align-items:center}
+  .datebox .dk svg{width:13px;height:13px}
+  .datebox .dv{font-family:"Bricolage Grotesque",serif;font-size:17px;font-weight:700;margin-top:5px}
+  .datebox .dd{font-size:11px;color:var(--brand);font-weight:600;margin-top:1px}
+
+  /* ---------- Bottom nav ---------- */
+  .navbar{position:absolute;left:0;right:0;bottom:0;height:88px;background:var(--surface);border-top:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;padding:11px 14px 0;z-index:8}
+  .navbar::before{content:"";position:absolute;inset:0;bottom:auto;height:20px;top:-20px;background:linear-gradient(to top,var(--surface),transparent);pointer-events:none}
+  .navb{background:none;border:0;font:inherit;cursor:pointer;color:var(--ink-3);display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;padding:4px 0;transition:color .2s}
+  .navb svg{width:22px;height:22px}
+  .navb span{font-size:10px;font-weight:600}
+  .navb.on{color:var(--brand)}
+  .navb.slot{width:56px;visibility:hidden}
+  .fab{position:absolute;bottom:52px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:20px;border:0;cursor:pointer;background:linear-gradient(150deg,var(--brand),var(--brand-ink));color:var(--on-brand);display:grid;place-items:center;box-shadow:0 10px 24px -6px rgba(20,99,79,.6);z-index:9;transition:transform .18s}
+  .fab:hover{transform:translateX(-50%) translateY(-2px)}
+  .fab svg{width:26px;height:26px}
+  .home-ind{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:120px;height:5px;border-radius:99px;background:var(--ink);opacity:.28;z-index:10}
+
+  /* ---------- Add sheet ---------- */
+  .sheet-scrim{position:absolute;inset:0;background:rgba(10,22,17,.42);opacity:0;pointer-events:none;transition:opacity .3s;z-index:20;backdrop-filter:blur(1px)}
+  .sheet-scrim.open{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:30px 30px 40px 40px;padding:10px 20px 26px;transform:translateY(105%);transition:transform .34s cubic-bezier(.22,1,.36,1);z-index:21;box-shadow:0 -14px 40px -14px rgba(0,0,0,.4);max-height:92%;overflow-y:auto}
+  .sheet.open{transform:none}
+  .grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:4px auto 14px}
+  .seg{display:flex;background:var(--surface-2);border-radius:13px;padding:4px;margin-bottom:18px}
+  .seg button{flex:1;border:0;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--ink-2);padding:9px;border-radius:10px;cursor:pointer}
+  .seg button.on{background:var(--surface);color:var(--expense);box-shadow:var(--shadow)}
+  .seg button.on.inc{color:var(--income)}
+  .amount-in{text-align:center;margin-bottom:6px}
+  .amount-in .cur{font-family:"Bricolage Grotesque",serif;font-size:22px;color:var(--ink-3);vertical-align:super}
+  .amount-in .num{font-family:"Bricolage Grotesque",serif;font-size:46px;font-weight:700;letter-spacing:-.02em}
+  .amount-in.exp .num{color:var(--expense)}
+  .amount-in.inc .num{color:var(--income)}
+  .kbd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 8px}
+  .key{border:0;background:var(--surface-2);font-family:"Bricolage Grotesque",serif;font-size:20px;font-weight:600;color:var(--ink);padding:14px;border-radius:14px;cursor:pointer;transition:background .12s}
+  .key:hover{background:var(--brand-soft)}
+  .cat-lbl{font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:8px 2px 10px}
+  .cats{display:flex;gap:9px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+  .cats::-webkit-scrollbar{display:none}
+  .cat{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:62px;cursor:pointer}
+  .cat .cc{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;border:2px solid transparent;transition:border-color .15s}
+  .cat.sel .cc{border-color:var(--brand)}
+  .cat .cc svg{width:21px;height:21px}
+  .cat .cl{font-size:10.5px;color:var(--ink-2);font-weight:600}
+  .savebtn{width:100%;margin-top:16px;border:0;background:linear-gradient(150deg,var(--brand),var(--brand-ink));color:var(--on-brand);font:inherit;font-weight:700;font-size:15px;padding:15px;border-radius:16px;cursor:pointer;box-shadow:var(--shadow)}
+  .metarow{display:flex;gap:10px;margin-top:12px}
+  .metabtn{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .metabtn svg{width:15px;height:15px;color:var(--ink-3)}
+
+  /* ---------- Side notes ---------- */
+  .notes{position:sticky;top:40px}
+  .note-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:18px 18px 6px;box-shadow:var(--shadow);margin-bottom:16px}
+  .note-card > h3{font-family:"Bricolage Grotesque",serif;font-size:16px;margin:0 0 4px;letter-spacing:-.01em}
+  .note-card > p.lead{font-size:12.5px;color:var(--ink-2);margin:0 0 8px;line-height:1.5}
+  .note{padding:13px 0;border-top:1px solid var(--line)}
+  .note:first-of-type{border-top:0}
+  .note .nh{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700}
+  .note .ni{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto}
+  .note .ni svg{width:14px;height:14px}
+  .note p{margin:8px 0 0;font-size:12.3px;line-height:1.55;color:var(--ink-2)}
+  .tiplist{list-style:none;padding:0;margin:0}
+  .tiplist li{display:flex;gap:10px;font-size:12.3px;line-height:1.5;color:var(--ink-2);padding:7px 0}
+  .tiplist li svg{width:15px;height:15px;color:var(--brand);flex:0 0 auto;margin-top:2px}
+  .hint{text-align:center;font-size:12px;color:var(--ink-3);margin:18px 0 0}
+  .hint b{color:var(--brand)}
+  .foot{max-width:1120px;margin:40px auto 0;padding:22px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12px;text-align:center}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <div class="brandline">
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#F3FAF6" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5C3 6.6 4.6 5 6.5 5H16a3 3 0 0 1 3 3v.5"/><path d="M3 8.5V16a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4a2 2 0 0 0-2-2H6.5A3.5 3.5 0 0 1 3 8.5Z"/><circle cx="16.5" cy="14" r="1.3" fill="#F3FAF6" stroke="none"/></svg>
+        </div>
+        <div>
+          <div class="eyebrow">Prototipo interactivo · PWA</div>
+          <h1>Bolsillo</h1>
+        </div>
+      </div>
+      <p>Control de finanzas personales. Tocá la barra inferior para cambiar de pantalla y el botón <b>+</b> para registrar un movimiento.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" aria-label="Cambiar tema">
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <span id="themeLabel">Tema</span>
+    </button>
+  </header>
+
+  <div class="stage">
+    <div class="phone-hold">
+      <div class="phone">
+        <div class="notch" aria-hidden="true"></div>
+        <div class="bezel">
+          <div class="statusbar">
+            <span class="tnum">9:41</span>
+            <span class="dots" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 20h3v-6H2v6Zm5 0h3V9H7v11Zm5 0h3V4h-3v16Zm5 0h3v-9h-3v9Z"/></svg>
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 6c3.3 0 6.3 1.3 8.5 3.5l-1.4 1.4A9.9 9.9 0 0 0 12 8a9.9 9.9 0 0 0-7.1 2.9L3.5 9.5A11.9 11.9 0 0 1 12 6Zm0 4c2.2 0 4.2.9 5.7 2.3l-1.4 1.4A6 6 0 0 0 12 12a6 6 0 0 0-4.3 1.7l-1.4-1.4A8 8 0 0 1 12 10Zm0 4c1.1 0 2.1.4 2.8 1.2L12 18l-2.8-2.8A4 4 0 0 1 12 14Z"/></svg>
+              <svg viewBox="0 0 26 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="18" height="10" rx="2.5"/><rect x="4" y="9" width="12" height="6" rx="1" fill="currentColor"/><path d="M22 10v4" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+
+          <div class="screens" id="screens">
+
+            <!-- ============ INICIO ============ -->
+            <section class="screen active" data-screen="inicio">
+              <div class="scr-head">
+                <div class="scr-kicker">Hola, Rubén 👋</div>
+                <h2 class="scr-title">Buenas tardes</h2>
+              </div>
+
+              <div class="balcard">
+                <div class="ring" aria-hidden="true"></div>
+                <div class="lbl">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Balance total
+                </div>
+                <div class="amount tnum">$8.420.500</div>
+                <div class="sub">4 cuentas · agosto 2026</div>
+                <div class="flowrow">
+                  <div class="flowchip">
+                    <div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M17 7H9M17 7v8"/></svg> Ingresos</div>
+                    <div class="v tnum">$4.200.000</div>
+                  </div>
+                  <div class="flowchip">
+                    <div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17M7 17h8M7 17V9"/></svg> Gastos</div>
+                    <div class="v tnum">$2.965.300</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sec-h"><h3>Mis cuentas</h3><a href="#" onclick="return false">Ver todas</a></div>
+              <div class="accounts">
+                <div class="acct">
+                  <div class="ai t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+                  <div class="an">Bancolombia</div><div class="av tnum">$5.180.000</div>
+                </div>
+                <div class="acct">
+                  <div class="ai t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
+                  <div class="an">Nequi</div><div class="av tnum">$1.240.500</div>
+                </div>
+                <div class="acct">
+                  <div class="ai t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v10H3z"/><path d="M3 11h18"/></svg></div>
+                  <div class="an">Efectivo</div><div class="av tnum">$2.000.000</div>
+                </div>
+              </div>
+
+              <div class="sec-h"><h3>Movimientos</h3><a href="#" onclick="return false">Historial</a></div>
+              <div class="daylabel">Hoy · 29 ago</div>
+              <div class="txlist">
+                <div class="tx"><div class="ic t-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div><div class="mid"><div class="nm">Mercado — Éxito</div><div class="mt">Bancolombia · 4:10 p.m.</div></div><div class="amt out tnum">−$182.400</div></div>
+                <div class="tx"><div class="ic t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17V9l2-4h8l2 4v8"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg></div><div class="mid"><div class="nm">Uber al centro</div><div class="mt">Nequi · 1:22 p.m.</div></div><div class="amt out tnum">−$14.900</div></div>
+                <div class="tx"><div class="ic t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="mid"><div class="nm">Pago freelance</div><div class="mt">Bancolombia · 9:05 a.m.</div></div><div class="amt in tnum">+$1.350.000</div></div>
+              </div>
+              <div class="daylabel">Ayer · 28 ago</div>
+              <div class="txlist">
+                <div class="tx"><div class="ic t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H4z"/><path d="m8 21 4-3 4 3"/></svg></div><div class="mid"><div class="nm">Netflix</div><div class="mt">Tarjeta Visa · Suscripción</div></div><div class="amt out tnum">−$44.900</div></div>
+                <div class="tx"><div class="ic t-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div><div class="mid"><div class="nm">Servicios — EPM</div><div class="mt">Bancolombia · Recurrente</div></div><div class="amt out tnum">−$236.700</div></div>
+              </div>
+            </section>
+
+            <!-- ============ PRESUPUESTOS ============ -->
+            <section class="screen" data-screen="presupuestos">
+              <div class="scr-head"><div class="scr-kicker">Agosto 2026</div><h2 class="scr-title">Presupuestos</h2></div>
+              <div class="bigmeter">
+                <div class="top">
+                  <div><div class="lab">Gastado este mes</div><div class="big tnum">$2.965.300</div></div>
+                  <div class="of">de <b class="tnum">$3.600.000</b></div>
+                </div>
+                <div class="track"><div class="fill" style="width:82%"></div></div>
+                <div class="of" style="margin-top:9px">Te quedan <b style="color:var(--brand)" class="tnum">$634.700</b> · 2 días para fin de mes</div>
+              </div>
+
+              <div class="sec-h"><h3>Por categoría</h3><a href="#" onclick="return false">Ajustar</a></div>
+
+              <div class="budget">
+                <div class="row1"><div class="bi t-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div><div class="bn">Mercado <span class="pill warn">83%</span></div><div class="bp"><b class="tnum">$746.000</b><br>de $900.000</div></div>
+                <div class="track"><div class="fill warn" style="width:83%"></div></div>
+              </div>
+
+              <div class="budget">
+                <div class="row1"><div class="bi t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17V9l2-4h8l2 4v8"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg></div><div class="bn">Transporte <span class="pill ok">54%</span></div><div class="bp"><b class="tnum">$162.000</b><br>de $300.000</div></div>
+                <div class="track"><div class="fill" style="width:54%"></div></div>
+              </div>
+
+              <div class="budget">
+                <div class="row1"><div class="bi t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v7a3 3 0 0 0 6 0V2M9 2v7M18 2c-1.5 0-2 4-2 7 0 2 .7 3 2 3v10"/></svg></div><div class="bn">Restaurantes <span class="pill over">104%</span></div><div class="bp"><b class="tnum">$520.000</b><br>de $500.000</div></div>
+                <div class="track"><div class="fill over" style="width:100%"></div></div>
+              </div>
+
+              <div class="budget">
+                <div class="row1"><div class="bi t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg></div><div class="bn">Servicios <span class="pill ok">47%</span></div><div class="bp"><b class="tnum">$236.700</b><br>de $500.000</div></div>
+                <div class="track"><div class="fill" style="width:47%"></div></div>
+              </div>
+
+              <div class="budget">
+                <div class="row1"><div class="bi t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H4z"/><path d="m8 21 4-3 4 3"/></svg></div><div class="bn">Suscripciones <span class="pill ok">61%</span></div><div class="bp"><b class="tnum">$134.700</b><br>de $220.000</div></div>
+                <div class="track"><div class="fill" style="width:61%"></div></div>
+              </div>
+            </section>
+
+            <!-- ============ REPORTES ============ -->
+            <section class="screen" data-screen="reportes">
+              <div class="scr-head"><div class="scr-kicker">Análisis</div><h2 class="scr-title">Reportes</h2></div>
+
+              <div class="card">
+                <h4>Gasto por categoría</h4>
+                <div class="csub">Agosto · $2.965.300 en total</div>
+                <div class="donutwrap">
+                  <svg class="donut" viewBox="0 0 42 42" id="donut">
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" stroke-width="6"/>
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#14634F" stroke-width="6" stroke-dasharray="30 70" stroke-dashoffset="25"/>
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#E8A23C" stroke-width="6" stroke-dasharray="25 75" stroke-dashoffset="-5"/>
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#3E74B8" stroke-width="6" stroke-dasharray="17 83" stroke-dashoffset="-30"/>
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#7C5CC2" stroke-width="6" stroke-dasharray="16 84" stroke-dashoffset="-47"/>
+                    <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#D65B45" stroke-width="6" stroke-dasharray="12 88" stroke-dashoffset="-63"/>
+                    <text class="center-v" x="21" y="20" text-anchor="middle" font-size="6" fill="var(--ink)">$2.9M</text>
+                    <text x="21" y="26" text-anchor="middle" font-size="2.6" fill="var(--ink-3)">este mes</text>
+                  </svg>
+                  <div class="legend">
+                    <div class="lg"><span class="sw" style="background:#14634F"></span><span class="ln">Mercado</span><span class="lv tnum">30%</span></div>
+                    <div class="lg"><span class="sw" style="background:#E8A23C"></span><span class="ln">Restaurantes</span><span class="lv tnum">25%</span></div>
+                    <div class="lg"><span class="sw" style="background:#3E74B8"></span><span class="ln">Transporte</span><span class="lv tnum">17%</span></div>
+                    <div class="lg"><span class="sw" style="background:#7C5CC2"></span><span class="ln">Servicios</span><span class="lv tnum">16%</span></div>
+                    <div class="lg"><span class="sw" style="background:#D65B45"></span><span class="ln">Otros</span><span class="lv tnum">12%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <h4>Tendencia de gasto</h4>
+                <div class="csub">Últimos 6 meses · promedio $2.71M</div>
+                <div class="bars">
+                  <div class="bcol"><div class="bar" style="height:58%"></div><div class="bl">Mar</div></div>
+                  <div class="bcol"><div class="bar" style="height:72%"></div><div class="bl">Abr</div></div>
+                  <div class="bcol"><div class="bar" style="height:64%"></div><div class="bl">May</div></div>
+                  <div class="bcol"><div class="bar" style="height:80%"></div><div class="bl">Jun</div></div>
+                  <div class="bcol"><div class="bar" style="height:69%"></div><div class="bl">Jul</div></div>
+                  <div class="bcol hl"><div class="bar" style="height:88%"></div><div class="bl">Ago</div></div>
+                </div>
+              </div>
+
+              <div class="card" style="display:flex;gap:12px;align-items:center">
+                <div class="ni t-green" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg></div>
+                <div><div style="font-size:13px;font-weight:700">Ahorraste 8% más que en julio</div><div style="font-size:12px;color:var(--ink-2);margin-top:2px">Tu tasa de ahorro este mes fue del 29%.</div></div>
+              </div>
+            </section>
+
+            <!-- ============ METAS ============ -->
+            <section class="screen" data-screen="metas">
+              <div class="scr-head"><div class="scr-kicker">Objetivos de ahorro</div><h2 class="scr-title">Metas</h2></div>
+
+              <div class="goal">
+                <div class="gtop">
+                  <div class="gemoji">✈️</div>
+                  <div><div class="gname">Viaje a Cartagena</div><div class="gsub">Diciembre 2026</div></div>
+                  <div class="gnums"><div class="gnow tnum">$1.800.000</div><div class="gtot tnum">de $3.000.000</div></div>
+                </div>
+                <div class="track"><div class="fill" style="width:60%"></div></div>
+                <div class="of" style="font-size:11.5px;margin-top:8px">60% · vas $180.000/mes, llegas a tiempo 🎯</div>
+              </div>
+
+              <div class="goal">
+                <div class="gtop">
+                  <div class="gemoji">🛡️</div>
+                  <div><div class="gname">Fondo de emergencia</div><div class="gsub">Meta: 3 meses de gastos</div></div>
+                  <div class="gnums"><div class="gnow tnum">$5.400.000</div><div class="gtot tnum">de $9.000.000</div></div>
+                </div>
+                <div class="track"><div class="fill" style="width:60%"></div></div>
+                <div class="of" style="font-size:11.5px;margin-top:8px">60% · constante desde marzo</div>
+              </div>
+
+              <div class="goal">
+                <div class="gtop">
+                  <div class="gemoji">💻</div>
+                  <div><div class="gname">MacBook nuevo</div><div class="gsub">Sin fecha límite</div></div>
+                  <div class="gnums"><div class="gnow tnum">$920.000</div><div class="gtot tnum">de $6.500.000</div></div>
+                </div>
+                <div class="track"><div class="fill warn" style="width:14%"></div></div>
+                <div class="of" style="font-size:11.5px;margin-top:8px">14% · aporte sugerido $250.000/mes</div>
+              </div>
+
+              <button class="savebtn" style="background:var(--surface-2);color:var(--brand);border:1.5px dashed var(--line);box-shadow:none">+ Nueva meta de ahorro</button>
+            </section>
+
+            <!-- ============ TARJETAS ============ -->
+            <section class="screen" data-screen="tarjetas">
+              <div class="scr-head"><div class="scr-kicker">Crédito</div><h2 class="scr-title">Tarjetas</h2></div>
+
+              <div class="creditcard">
+                <div class="cc-ring" aria-hidden="true"></div>
+                <div class="cc-top"><span class="cc-brand">Visa Oro</span><span style="font-size:12px;opacity:.85">Bancolombia</span></div>
+                <div class="cc-chip"></div>
+                <div class="cc-num tnum">•••• •••• •••• 4821</div>
+                <div class="cc-foot"><span>Cupo usado</span><span class="tnum" style="font-weight:700">$1.240.000 / $4.000.000</span></div>
+              </div>
+
+              <div class="datesrow">
+                <div class="datebox">
+                  <div class="dk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg> Fecha de corte</div>
+                  <div class="dv tnum">5 sep</div>
+                  <div class="dd">en 7 días</div>
+                </div>
+                <div class="datebox">
+                  <div class="dk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/></svg> Pago máximo</div>
+                  <div class="dv tnum">23 sep</div>
+                  <div class="dd" style="color:var(--accent)">en 25 días</div>
+                </div>
+              </div>
+
+              <div class="bigmeter" style="margin-bottom:14px">
+                <div class="top"><div><div class="lab">Cupo disponible</div><div class="big tnum" style="color:var(--brand)">$2.760.000</div></div><div class="of">31% usado</div></div>
+                <div class="track"><div class="fill" style="width:31%"></div></div>
+              </div>
+
+              <div class="sec-h"><h3>Consumos del ciclo</h3></div>
+              <div class="txlist">
+                <div class="tx"><div class="ic t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H4z"/><path d="m8 21 4-3 4 3"/></svg></div><div class="mid"><div class="nm">Netflix</div><div class="mt">28 ago · Suscripción</div></div><div class="amt out tnum">$44.900</div></div>
+                <div class="tx"><div class="ic t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 3l3 4-3 4M7 21l-3-4 3-4"/></svg></div><div class="mid"><div class="nm">Falabella</div><div class="mt">24 ago · 3 cuotas</div></div><div class="amt out tnum">$389.000</div></div>
+                <div class="tx"><div class="ic t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18v10H3z"/><path d="M3 9l2-5h14l2 5"/></svg></div><div class="mid"><div class="nm">Farmatodo</div><div class="mt">21 ago</div></div><div class="amt out tnum">$78.500</div></div>
+              </div>
+            </section>
+
+          </div><!-- /screens -->
+
+          <!-- Add sheet -->
+          <div class="sheet-scrim" id="scrim"></div>
+          <div class="sheet" id="sheet" role="dialog" aria-label="Registrar movimiento">
+            <div class="grab"></div>
+            <div class="seg" id="seg">
+              <button class="on" data-type="gasto">Gasto</button>
+              <button data-type="ingreso">Ingreso</button>
+            </div>
+            <div class="amount-in exp" id="amountBox"><span class="cur">$</span><span class="num tnum" id="amountVal">0</span></div>
+            <div class="cat-lbl">Categoría</div>
+            <div class="cats" id="cats">
+              <div class="cat sel"><div class="cc t-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div><span class="cl">Mercado</span></div>
+              <div class="cat"><div class="cc t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v7a3 3 0 0 0 6 0V2M18 2c-1.5 0-2 4-2 7 0 2 .7 3 2 3v10"/></svg></div><span class="cl">Comida</span></div>
+              <div class="cat"><div class="cc t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6 17V9l2-4h8l2 4v8"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg></div><span class="cl">Transporte</span></div>
+              <div class="cat"><div class="cc t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8M5 10v10h14V10"/></svg></div><span class="cl">Hogar</span></div>
+              <div class="cat"><div class="cc t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H4zM8 21l4-3 4 3"/></svg></div><span class="cl">Ocio</span></div>
+            </div>
+            <div class="metarow">
+              <button class="metabtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg> Bancolombia</button>
+              <button class="metabtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg> Hoy</button>
+            </div>
+            <div class="kbd" id="kbd">
+              <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+              <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+              <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+              <button class="key" data-k="000">000</button><button class="key">0</button><button class="key" data-k="del">⌫</button>
+            </div>
+            <button class="savebtn" id="saveBtn">Guardar movimiento</button>
+          </div>
+
+          <!-- Nav -->
+          <nav class="navbar">
+            <button class="navb on" data-go="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8M5 10v10h14V10"/></svg><span>Inicio</span></button>
+            <button class="navb" data-go="presupuestos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg><span>Presup.</span></button>
+            <button class="navb slot" aria-hidden="true"></button>
+            <button class="navb" data-go="reportes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg><span>Reportes</span></button>
+            <button class="navb" data-go="metas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><span>Metas</span></button>
+          </nav>
+          <button class="fab" id="fab" aria-label="Registrar movimiento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          <div class="home-ind" aria-hidden="true"></div>
+        </div><!-- /bezel -->
+      </div><!-- /phone -->
+    </div>
+
+    <!-- ================= NOTES ================= -->
+    <aside class="notes">
+      <div class="note-card">
+        <h3>Por qué está diseñada así</h3>
+        <p class="lead">Las decisiones detrás del prototipo. Todo gira en torno a una idea: registrar un gasto tiene que costar menos de 5 segundos.</p>
+
+        <div class="note">
+          <div class="nh"><span class="ni t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg></span> Registro en 5 segundos</div>
+          <p>El botón <b>+</b> abre un teclado numérico grande con las categorías más usadas primero. Monto y categoría son lo único obligatorio; cuenta y fecha vienen predefinidas. Es la pantalla que decide si la app se usa o se abandona.</p>
+        </div>
+
+        <div class="note">
+          <div class="nh"><span class="ni t-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span> Un vistazo lo dice todo</div>
+          <p>La pantalla de inicio responde de inmediato: cuánto tengo, cuánto gasté y si voy bien. El balance en grande, luego cuentas, y abajo los movimientos recientes.</p>
+        </div>
+
+        <div class="note">
+          <div class="nh"><span class="ni t-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Alertas antes del bache</div>
+          <p>Los presupuestos avisan con color y una etiqueta (verde, ámbar, rojo) cuando te acercas o pasas el límite. Ver «104%» en rojo pega más que cualquier número suelto.</p>
+        </div>
+
+        <div class="note">
+          <div class="nh"><span class="ni t-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg></span> Pensada para Colombia</div>
+          <p>Cuentas como Nequi y Bancolombia, montos en pesos con separador de miles, y tarjeta de crédito con <b>fecha de corte y de pago</b> — el dato que más se olvida.</p>
+        </div>
+
+        <div class="note">
+          <div class="nh"><span class="ni t-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span> Privacidad primero</div>
+          <p>Datos en el teléfono, bloqueo con huella o PIN al abrir, y respaldo opcional. Con la plata, la confianza es la funcionalidad número uno.</p>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <h3>Para la versión web/PWA</h3>
+        <ul class="tiplist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Se instala desde el navegador, sin tiendas de apps.</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Funciona offline: registrás sin señal y sincroniza después.</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sugerencia de stack: React + IndexedDB local, o Flutter si querés app nativa después.</li>
+        </ul>
+      </div>
+      <p class="hint">Tocá <b>Inicio · Presup. · Reportes · Metas</b> abajo, y el <b>+</b> para el registro rápido. La tarjeta de crédito vive dentro de la pantalla de cuentas.</p>
+    </aside>
+  </div>
+
+  <div class="foot">Bolsillo · prototipo de concepto. Datos de ejemplo, no reales. Diseñado como punto de partida para tu app de finanzas.</div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  /* Theme toggle */
+  var tb=document.getElementById('themeBtn');
+  var ti=document.getElementById('themeIcon');
+  var tl=document.getElementById('themeLabel');
+  var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>';
+  function prefersDark(){return window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;}
+  function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':prefersDark();}
+  function paint(){var d=isDark();ti.innerHTML=d?sun:moon;tl.textContent=d?'Claro':'Oscuro';}
+  tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');paint();});
+  paint();
+
+  /* Screen nav */
+  var screens=document.querySelectorAll('.screen');
+  var navbs=document.querySelectorAll('.navb[data-go]');
+  function go(name){
+    screens.forEach(function(s){s.classList.toggle('active',s.dataset.screen===name);});
+    navbs.forEach(function(b){b.classList.toggle('on',b.dataset.go===name);});
+    var sc=document.querySelector('.screen[data-screen="'+name+'"]');if(sc)sc.scrollTop=0;
+  }
+  navbs.forEach(function(b){b.addEventListener('click',function(){go(b.dataset.go);});});
+
+  /* Add sheet */
+  var scrim=document.getElementById('scrim');
+  var sheet=document.getElementById('sheet');
+  var fab=document.getElementById('fab');
+  function open(){scrim.classList.add('open');sheet.classList.add('open');}
+  function close(){scrim.classList.remove('open');sheet.classList.remove('open');}
+  fab.addEventListener('click',open);
+  scrim.addEventListener('click',close);
+
+  /* Gasto/Ingreso segment */
+  var segBtns=document.querySelectorAll('#seg button');
+  var abox=document.getElementById('amountBox');
+  segBtns.forEach(function(b){b.addEventListener('click',function(){
+    segBtns.forEach(function(x){x.classList.remove('on','inc');});
+    b.classList.add('on');
+    if(b.dataset.type==='ingreso'){b.classList.add('inc');abox.classList.remove('exp');abox.classList.add('inc');}
+    else{abox.classList.remove('inc');abox.classList.add('exp');}
+  });});
+
+  /* Category select */
+  var cats=document.querySelectorAll('#cats .cat');
+  cats.forEach(function(c){c.addEventListener('click',function(){
+    cats.forEach(function(x){x.classList.remove('sel');});c.classList.add('sel');
+  });});
+
+  /* Numeric keypad */
+  var raw='';
+  var av=document.getElementById('amountVal');
+  function fmt(n){if(!n)return '0';return Number(n).toLocaleString('es-CO');}
+  document.getElementById('kbd').addEventListener('click',function(e){
+    var k=e.target.closest('.key');if(!k)return;
+    var val=k.dataset.k||k.textContent.trim();
+    if(val==='del'){raw=raw.slice(0,-1);}
+    else if(val==='000'){if(raw)raw+='000';}
+    else{if(raw.length<9)raw+=val;}
+    raw=raw.replace(/^0+/,'');
+    av.textContent=fmt(raw);
+  });
+  document.getElementById('saveBtn').addEventListener('click',function(){
+    var btn=this;var prev=btn.textContent;
+    btn.textContent='✓ Guardado';btn.style.background='linear-gradient(150deg,var(--income),#1F7D53)';
+    setTimeout(function(){close();setTimeout(function(){btn.textContent=prev;btn.style.background='';raw='';av.textContent='0';},350);},650);
+  });
+})();
+</script>

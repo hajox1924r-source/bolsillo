@@ -1,0 +1,16 @@
+{
+  "name": "Bolsillo — Finanzas personales",
+  "short_name": "Bolsillo",
+  "description": "Controla tus ingresos, gastos, presupuestos y metas de ahorro.",
+  "lang": "es-CO",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B100D",
+  "theme_color": "#14634F",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
