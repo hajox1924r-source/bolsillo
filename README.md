@@ -12,7 +12,8 @@ Si registrar cuesta, la app se abandona.
 - **React 19** + **Vite** — SPA rápida, base para PWA.
 - **PWA nativa** — `manifest.webmanifest` + service worker propio (sin dependencias
   pesadas). Instalable y funciona offline.
-- **localStorage** para persistir los movimientos (migrable a IndexedDB si crece).
+- **Supabase** (PostgreSQL + Auth) como backend: base de datos en la nube y login.
+  Sin credenciales configuradas, la app funciona en modo local (localStorage).
 
 ## Correr en local
 
@@ -41,6 +42,24 @@ bolsillo/
 └─ design/
    └─ prototipo.html         # prototipo visual navegable (referencia de diseño)
 ```
+
+## Backend (Supabase)
+
+El backend es **Supabase**: una base de datos PostgreSQL en la nube más login,
+sin servidor propio que mantener. El esquema de la base está en
+[`supabase/schema.sql`](supabase/schema.sql).
+
+### Conectar tu proyecto
+
+1. Creá una cuenta y un proyecto en [supabase.com](https://supabase.com) (plan gratis).
+2. En el panel de Supabase: **SQL Editor → New query**, pegá el contenido de
+   `supabase/schema.sql` y dale **Run**. Eso crea las tablas y la seguridad.
+3. En **Project Settings → API** copiá el **Project URL** y la **anon public key**.
+4. En la carpeta del proyecto, copiá `.env.example` como `.env` y pegá esos dos valores.
+5. `npm run dev` — la app ahora usa la nube.
+
+> El archivo `.env` guarda tus credenciales y **no se sube a GitHub** (está en
+> `.gitignore`). Nunca lo compartas ni lo publiques.
 
 ## Estado actual
 
