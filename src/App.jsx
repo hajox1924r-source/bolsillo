@@ -4,7 +4,10 @@ import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals } from './screens.jsx'
 import { categories } from './data.js'
-import { getTransactions, addTransaction, updateTransaction, deleteTransaction } from './lib/db.js'
+import {
+  getTransactions, addTransaction, updateTransaction, deleteTransaction,
+  getBudgets, upsertBudget, deleteBudget,
+} from './lib/db.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -18,7 +21,9 @@ export default function App() {
   const [ready, setReady] = useState(!hasCloud)
   const [screen, setScreen] = useState('inicio')
   const [tx, setTx] = useState([])
-  const [sheet, setSheet] = useState(null)
+  const [budgets, setBudgets] = useState([])
+  const [sheet, setSheet] = useState(null)     // movimiento
+  const [bsheet, setBsheet] = useState(null)    // presupuesto
   const [veil, setVeil] = useState(false)
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
 
@@ -30,8 +35,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (hasCloud && !session) { setTx([]); return }
+    if (hasCloud && !session) { setTx([]); setBudgets([]); return }
     getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
+    getBudgets().then(setBudgets).catch((e) => console.error('Error presupuestos:', e.message))
   }, [session])
 
   const toggleTheme = () => {
@@ -40,7 +46,6 @@ export default function App() {
     setDark(!dark)
   }
 
-  // Cierre de sesión con transición: velo → salir → revelar login.
   const logout = () => {
     setVeil(true)
     setTimeout(async () => {
@@ -71,6 +76,25 @@ export default function App() {
     } catch (e) { console.error('Error al borrar:', e.message) }
   }
 
+  const saveBudget = async (cat, limit) => {
+    setBsheet(null)
+    try {
+      const b = await upsertBudget(cat, limit)
+      setBudgets((list) => {
+        const i = list.findIndex((x) => x.cat === b.cat)
+        return i >= 0 ? list.map((x) => (x.cat === b.cat ? b : x)) : [...list, b]
+      })
+    } catch (e) { console.error('Error presupuesto:', e.message) }
+  }
+
+  const delBudget = async (id) => {
+    setBsheet(null)
+    try {
+      await deleteBudget(id)
+      setBudgets((list) => list.filter((b) => b.id !== id))
+    } catch (e) { console.error('Error al borrar presupuesto:', e.message) }
+  }
+
   const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
     || session?.user?.email?.split('@')[0] || ''
 
@@ -98,7 +122,7 @@ export default function App() {
 
       <div className="view" key={screen}>
         {screen === 'inicio' && <Home tx={tx} onEdit={setSheet} />}
-        {screen === 'presupuestos' && <Budgets />}
+        {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
         {screen === 'metas' && <Goals />}
       </div>
@@ -113,6 +137,10 @@ export default function App() {
       </button>
 
       {sheet && <TxSheet initial={sheet} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
+      {bsheet && (
+        <BudgetSheet initial={bsheet} existing={budgets.map((b) => b.cat)}
+          onClose={() => setBsheet(null)} onSave={saveBudget} onDelete={delBudget} />
+      )}
     </div>
   )
 
@@ -134,6 +162,22 @@ function NavBtn({ n, on, go }) {
   )
 }
 
+// Teclado numérico compartido
+function Keypad({ onKey }) {
+  return (
+    <div className="kbd">
+      {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'del'].map((k) => (
+        <button className="key" key={k} onClick={() => onKey(k)}>{k === 'del' ? '⌫' : k}</button>
+      ))}
+    </div>
+  )
+}
+const pressDigits = (setRaw) => (k) => {
+  if (k === 'del') setRaw((r) => r.slice(0, -1))
+  else if (k === '000') setRaw((r) => (r ? r + '000' : ''))
+  else setRaw((r) => (r.length < 9 ? (r + k).replace(/^0+/, '') : r))
+}
+
 function TxSheet({ initial, onClose, onSave, onDelete }) {
   const editing = !!initial?.id
   const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
@@ -144,17 +188,8 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   const amount = Number(raw || 0)
   const selIdx = Math.max(0, opts.findIndex((o) => o.id === cat))
 
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setOpen(true))
-    return () => cancelAnimationFrame(id)
-  }, [])
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
   const close = () => { setOpen(false); setTimeout(onClose, 280) }
-
-  const press = (k) => {
-    if (k === 'del') setRaw((r) => r.slice(0, -1))
-    else if (k === '000') setRaw((r) => (r ? r + '000' : ''))
-    else setRaw((r) => (r.length < 9 ? (r + k).replace(/^0+/, '') : r))
-  }
   const save = () => {
     if (!amount) return
     const c = opts.find((o) => o.id === cat) || opts[0]
@@ -194,13 +229,68 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
             </button>
           ))}
         </div>
-        <div className="kbd">
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'del'].map((k) => (
-            <button className="key" key={k} onClick={() => press(k)}>{k === 'del' ? '⌫' : k}</button>
-          ))}
-        </div>
+        <Keypad onKey={pressDigits(setRaw)} />
         <button className="savebtn" disabled={!amount} onClick={save}>
           {editing ? 'Guardar cambios' : 'Guardar movimiento'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function BudgetSheet({ initial, existing, onClose, onSave, onDelete }) {
+  const editing = !!initial?.id
+  const expenseCats = categories.filter((c) => c.id !== 'ingreso')
+  const avail = editing
+    ? expenseCats.filter((c) => c.id === initial.cat)
+    : expenseCats.filter((c) => !existing.includes(c.id))
+  const [cat, setCat] = useState(initial?.cat || avail[0]?.id || '')
+  const [raw, setRaw] = useState(editing ? String(initial.limit) : '')
+  const [open, setOpen] = useState(false)
+  const amount = Number(raw || 0)
+  const selIdx = Math.max(0, avail.findIndex((c) => c.id === cat))
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+  const save = () => { if (amount && cat) onSave(cat, amount) }
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Presupuesto">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head">
+          <span>{editing ? 'Editar presupuesto' : 'Nuevo presupuesto'}</span>
+          {editing && (
+            <button className="del-btn" onClick={() => onDelete(initial.id)} aria-label="Borrar">
+              <Icon name="trash" size={16} /> Borrar
+            </button>
+          )}
+        </div>
+        <div className="cat-lbl" style={{ marginTop: 0 }}>Categoría</div>
+        {avail.length === 0 ? (
+          <p style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '8px 0 4px' }}>
+            Ya tenés presupuesto en todas las categorías.
+          </p>
+        ) : (
+          <div className="cats">
+            <span className="cat-thumb" style={{ transform: `translateX(${selIdx * 71}px)` }} />
+            {avail.map((c) => (
+              <button className={'cat' + (cat === c.id ? ' sel' : '')} key={c.id} disabled={editing} onClick={() => setCat(c.id)}>
+                <div className={'cc ' + c.tint}><Icon name={c.icon} size={21} /></div>
+                <span className="cl">{c.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="cat-lbl">Límite mensual</div>
+        <div className="amount-in">
+          <span className="cur">$</span>
+          <span className="num tnum">{amount ? amount.toLocaleString('es-CO') : '0'}</span>
+        </div>
+        <Keypad onKey={pressDigits(setRaw)} />
+        <button className="savebtn" disabled={!amount || !cat} onClick={save}>
+          {editing ? 'Guardar cambios' : 'Crear presupuesto'}
         </button>
       </div>
     </div>

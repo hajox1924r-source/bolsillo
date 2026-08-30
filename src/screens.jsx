@@ -145,38 +145,58 @@ export function Reports({ tx }) {
   )
 }
 
-export function Budgets() {
-  const total = budgets.reduce((s, b) => s + b.spent, 0)
-  const limit = budgets.reduce((s, b) => s + b.limit, 0)
+export function Budgets({ tx, budgets, onEdit }) {
+  const now = new Date()
+  const thisMonth = (iso) => { const d = new Date(iso); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() }
+  const spentByCat = {}
+  tx.filter((t) => t.amount < 0 && thisMonth(t.occurred_at)).forEach((t) => { spentByCat[t.cat] = (spentByCat[t.cat] || 0) - t.amount })
+  const rows = budgets.map((b) => ({ ...b, spent: spentByCat[b.cat] || 0 }))
+  const totalSpent = rows.reduce((s, r) => s + r.spent, 0)
+  const totalLimit = rows.reduce((s, r) => s + r.limit, 0)
+
+  if (budgets.length === 0) {
+    return (
+      <>
+        <h2 className="scr-title">Presupuestos</h2>
+        <div className="empty">
+          <div className="empty-ic">🎯</div>
+          <p>Poné un límite mensual por categoría<br />y controlá en qué se te va la plata.</p>
+        </div>
+        <button className="savebtn" onClick={() => onEdit({})}>Crear presupuesto</button>
+      </>
+    )
+  }
+
+  const gp = totalLimit ? totalSpent / totalLimit : 0
   return (
     <>
       <h2 className="scr-title">Presupuestos</h2>
       <div className="bigmeter">
         <div className="top">
           <div><div style={{ color: 'var(--ink-2)', fontSize: 12.5, fontWeight: 600 }}>Gastado este mes</div>
-            <div className="big tnum">{money(total)}</div></div>
-          <div style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>de <b className="tnum">{money(limit)}</b></div>
+            <div className="big tnum">{money(totalSpent)}</div></div>
+          <div style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>de <b className="tnum">{money(totalLimit)}</b></div>
         </div>
-        <div className="track"><div className="fill" style={{ width: pct(total, limit) + '%' }} /></div>
+        <div className="track"><div className={'fill ' + (gp >= 1 ? 'over' : gp >= 0.8 ? 'warn' : '')} style={{ width: pct(totalSpent, totalLimit) + '%' }} /></div>
       </div>
-      {budgets.map((b) => {
-        const p = Math.round((b.spent / b.limit) * 100)
+      {rows.map((r) => {
+        const p = r.limit ? Math.round((r.spent / r.limit) * 100) : 0
         const state = p >= 100 ? 'over' : p >= 80 ? 'warn' : 'ok'
-        const c = catById(b.cat)
+        const c = catById(r.cat)
         return (
-          <div className="budget" key={b.label}>
+          <button className="budget" key={r.id} onClick={() => onEdit(r)}>
             <div className="row1">
-              <div className={'ic ' + b.tint} style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center' }}>
+              <div className={'ic ' + c.tint} style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center' }}>
                 <Icon name={c.icon} size={17} />
               </div>
-              <div className="bn">{b.label}<span className={'pill ' + state}>{p}%</span></div>
-              <div className="bp"><b className="tnum">{money(b.spent)}</b><br />de {money(b.limit)}</div>
+              <div className="bn">{c.label}<span className={'pill ' + state}>{p}%</span></div>
+              <div className="bp"><b className="tnum">{money(r.spent)}</b><br />de {money(r.limit)}</div>
             </div>
             <div className="track"><div className={'fill ' + (state === 'ok' ? '' : state)} style={{ width: Math.min(100, p) + '%' }} /></div>
-          </div>
+          </button>
         )
       })}
-      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
+      <button className="savebtn ghost" onClick={() => onEdit({})}>+ Nuevo presupuesto</button>
     </>
   )
 }

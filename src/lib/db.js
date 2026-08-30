@@ -51,3 +51,41 @@ export async function deleteTransaction(id) {
   const { error } = await supabase.from('transactions').delete().eq('id', id)
   if (error) throw error
 }
+
+// ---------- Presupuestos ----------
+const BKEY = 'bolsillo.budgets'
+const localB = () => { try { return JSON.parse(localStorage.getItem(BKEY)) || [] } catch { return [] } }
+const fromB = (r) => ({ id: r.id, cat: r.category, limit: Number(r.limit_amount) })
+
+export async function getBudgets() {
+  if (!hasCloud) return localB()
+  const { data, error } = await supabase.from('budgets').select('*')
+  if (error) throw error
+  return data.map(fromB)
+}
+
+export async function upsertBudget(cat, limit) {
+  if (!hasCloud) {
+    const list = localB()
+    const i = list.findIndex((b) => b.cat === cat)
+    const row = { id: i >= 0 ? list[i].id : Date.now(), cat, limit }
+    if (i >= 0) list[i] = row; else list.push(row)
+    localStorage.setItem(BKEY, JSON.stringify(list))
+    return row
+  }
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.from('budgets')
+    .upsert({ user_id: user.id, category: cat, limit_amount: limit }, { onConflict: 'user_id,category' })
+    .select().single()
+  if (error) throw error
+  return fromB(data)
+}
+
+export async function deleteBudget(id) {
+  if (!hasCloud) {
+    localStorage.setItem(BKEY, JSON.stringify(localB().filter((b) => b.id !== id)))
+    return
+  }
+  const { error } = await supabase.from('budgets').delete().eq('id', id)
+  if (error) throw error
+}

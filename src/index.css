@@ -348,3 +348,7 @@ button{font-family:inherit}
   transform:scale(.92);transition:transform .3s ease}
 .veil.show .veil-inner{transform:scale(1)}
 .veil-inner span{font-size:14px;font-weight:600}
+
+/* Tarjeta de presupuesto como botón */
+button.budget{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.budget:active{transform:scale(.99)}

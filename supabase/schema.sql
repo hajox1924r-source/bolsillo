@@ -26,14 +26,14 @@ create table if not exists transactions (
   created_at  timestamptz not null default now()
 );
 
--- Presupuestos por categoría y mes
+-- Presupuestos: un límite recurrente por categoría
 create table if not exists budgets (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references auth.users(id) on delete cascade,
   category     text not null,
   limit_amount numeric(14,2) not null,
-  month        date not null,                 -- primer día del mes (2026-08-01)
-  unique (user_id, category, month)
+  created_at   timestamptz not null default now(),
+  unique (user_id, category)
 );
 
 -- Metas de ahorro
