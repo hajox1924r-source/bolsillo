@@ -344,7 +344,15 @@ const DOW = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA']
 
 function DateField({ value, onChange }) {
   const [open, setOpen] = useState(false)
+  const [shown, setShown] = useState(false)
   const [view, setView] = useState(() => (value ? new Date(value + 'T00:00:00') : new Date()))
+
+  useEffect(() => {
+    if (!open) return
+    const id = requestAnimationFrame(() => setShown(true))
+    return () => cancelAnimationFrame(id)
+  }, [open])
+  const closeCal = () => { setShown(false); setTimeout(() => setOpen(false), 200) }
   const sel = value ? new Date(value + 'T00:00:00') : null
   const y = view.getFullYear(), m = view.getMonth()
   const startDow = new Date(y, m, 1).getDay()
@@ -355,19 +363,19 @@ function DateField({ value, onChange }) {
 
   const pick = (d) => {
     onChange(`${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
-    setOpen(false)
+    closeCal()
   }
   const label = sel ? sel.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Sin fecha'
   const isSel = (d) => sel && sel.getDate() === d && sel.getMonth() === m && sel.getFullYear() === y
 
   return (
     <div className="datefield">
-      <button type="button" className="text-in datebtn" onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="text-in datebtn" onClick={() => (open ? closeCal() : setOpen(true))}>
         <span className={sel ? '' : 'ph'}>{label}</span>
         <Icon name="calendar" size={16} />
       </button>
       {open && (
-        <div className="cal-overlay" onClick={() => setOpen(false)}>
+        <div className={'cal-overlay' + (shown ? ' show' : '')} onClick={closeCal}>
           <div className="cal" onClick={(e) => e.stopPropagation()}>
           <div className="cal-head">
             <button type="button" onClick={() => setView(new Date(y, m - 1, 1))} aria-label="Mes anterior"><Icon name="chevL" size={16} /></button>
@@ -381,8 +389,8 @@ function DateField({ value, onChange }) {
               : <button type="button" key={i} className={'cal-day tnum' + (isSel(d) ? ' sel' : '')} onClick={() => pick(d)}>{d}</button>))}
           </div>
           <div className="cal-foot">
-            <button type="button" onClick={() => { onChange(''); setOpen(false) }}>Quitar</button>
-            <button type="button" onClick={() => { const t = new Date(); setView(new Date(t.getFullYear(), t.getMonth(), 1)) }}>Hoy</button>
+            <button type="button" onClick={() => { onChange(''); closeCal() }}>Quitar</button>
+            <button type="button" onClick={() => { const t = new Date(); onChange(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`); closeCal() }}>Hoy</button>
           </div>
           </div>
         </div>
