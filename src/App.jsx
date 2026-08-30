@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { supabase, hasCloud } from './lib/supabase.js'
+import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals } from './screens.jsx'
-import { categories, loadTx, saveTx } from './data.js'
+import { categories } from './data.js'
+import { getTransactions, addTransaction } from './lib/db.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -11,34 +14,58 @@ const NAV = [
 ]
 
 export default function App() {
+  const [session, setSession] = useState(null)
+  const [ready, setReady] = useState(!hasCloud) // sin nube no hay login
   const [screen, setScreen] = useState('inicio')
-  const [tx, setTx] = useState(loadTx)
+  const [tx, setTx] = useState([])
   const [adding, setAdding] = useState(false)
-  const [dark, setDark] = useState(
-    () => document.documentElement.getAttribute('data-theme') === 'dark'
-  )
+  const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
 
-  useEffect(() => saveTx(tx), [tx])
+  // Sesión de Supabase
+  useEffect(() => {
+    if (!hasCloud) return
+    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  // Cargar movimientos (al entrar, o siempre en modo local)
+  useEffect(() => {
+    if (hasCloud && !session) { setTx([]); return }
+    getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
+  }, [session])
+
   const toggleTheme = () => {
     const next = dark ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
     setDark(!dark)
   }
-  const addTx = (t) => {
-    setTx([{ ...t, id: Date.now(), account: 'Bancolombia', date: 'Hoy · 29 ago' }, ...tx])
+  const addTx = async (t) => {
     setAdding(false)
+    try { setTx([await addTransaction(t), ...tx]) }
+    catch (e) { console.error('Error al guardar:', e.message) }
   }
+
+  if (hasCloud && !ready) return <div className="app splash">Cargando…</div>
+  if (hasCloud && !session) return <div className="app"><Auth /></div>
 
   return (
     <div className="app">
       <div className="topbar">
         <div>
-          <div className="hello">Hola, Rubén 👋</div>
+          <div className="hello">Hola 👋</div>
           <h1>{screen === 'inicio' ? 'Buenas tardes' : ''}</h1>
         </div>
-        <button className="iconbtn" onClick={toggleTheme} aria-label="Cambiar tema">
-          <Icon name={dark ? 'sun' : 'moon'} size={18} />
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="iconbtn" onClick={toggleTheme} aria-label="Cambiar tema">
+            <Icon name={dark ? 'sun' : 'moon'} size={18} />
+          </button>
+          {hasCloud && (
+            <button className="iconbtn" onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión">
+              <Icon name="logout" size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="view">
@@ -49,13 +76,9 @@ export default function App() {
       </div>
 
       <nav className="navbar">
-        {NAV.slice(0, 2).map((n) => (
-          <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />
-        ))}
+        {NAV.slice(0, 2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />)}
         <button className="navb slot" aria-hidden="true" />
-        {NAV.slice(2).map((n) => (
-          <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />
-        ))}
+        {NAV.slice(2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />)}
       </nav>
       <button className="fab" onClick={() => setAdding(true)} aria-label="Registrar movimiento">
         <Icon name="plus" size={26} />
@@ -69,8 +92,7 @@ export default function App() {
 function NavBtn({ n, on, go }) {
   return (
     <button className={'navb' + (on ? ' on' : '')} onClick={() => go(n.id)}>
-      <Icon name={n.icon} size={22} />
-      <span>{n.label}</span>
+      <Icon name={n.icon} size={22} /><span>{n.label}</span>
     </button>
   )
 }

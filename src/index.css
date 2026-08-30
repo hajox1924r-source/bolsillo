@@ -165,3 +165,23 @@ button{font-family:inherit}
 .savebtn:disabled{opacity:.5;cursor:not-allowed}
 .savebtn.ghost{background:var(--surface-2);color:var(--brand);border:1.5px dashed var(--line);box-shadow:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* Login / registro */
+.splash{display:grid;place-items:center;color:var(--ink-3);font-weight:600}
+.auth{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 26px;text-align:center}
+.auth-logo{font-size:44px;margin-bottom:6px}
+.auth-title{font-family:"Bricolage Grotesque",serif;font-size:30px;font-weight:700;letter-spacing:-.02em;margin:0}
+.auth-sub{color:var(--ink-2);font-size:14px;margin:4px 0 26px}
+.auth-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:11px}
+.auth-form input{width:100%;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+  color:var(--ink);font-size:15px;font-family:inherit}
+.auth-form input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+.auth-msg{color:var(--expense);font-size:12.5px;margin:14px 0 0;max-width:320px}
+.auth-switch{margin-top:20px;background:none;border:0;color:var(--brand);font-weight:600;font-size:13.5px;cursor:pointer}
+
+/* Estado vacío */
+.empty{text-align:center;padding:36px 20px;color:var(--ink-3)}
+.empty-ic{font-size:38px;margin-bottom:10px}
+.empty p{font-size:13.5px;line-height:1.6;margin:0}
+
+.demo-note{text-align:center;font-size:11px;color:var(--ink-3);margin:16px 0 0;font-style:italic}

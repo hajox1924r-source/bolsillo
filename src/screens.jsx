@@ -1,58 +1,58 @@
 import Icon from './icons.jsx'
-import { money, catById, accounts, budgets, goals } from './data.js'
+import { money, catById, budgets, goals } from './data.js'
 
 const pct = (a, b) => Math.min(100, Math.round((a / b) * 100))
+const fmtDay = (iso) =>
+  new Date(iso).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
 
 export function Home({ tx }) {
   const ingresos = tx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const gastos = tx.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
-  const balance = accounts.reduce((s, a) => s + a.balance, 0)
-  const days = [...new Set(tx.map((t) => t.date))]
+  const balance = ingresos + gastos
+  const days = [...new Set(tx.map((t) => fmtDay(t.occurred_at)))]
+
   return (
     <>
       <div className="balcard">
-        <div className="lbl">Balance total</div>
-        <div className="amount tnum">{money(balance)}</div>
-        <div className="sub">{accounts.length} cuentas · agosto 2026</div>
+        <div className="lbl">Balance</div>
+        <div className="amount tnum">{balance < 0 ? '−' : ''}{money(balance)}</div>
+        <div className="sub">{tx.length} movimiento{tx.length === 1 ? '' : 's'}</div>
         <div className="flowrow">
           <div className="flowchip"><div className="k">Ingresos</div><div className="v tnum">{money(ingresos)}</div></div>
           <div className="flowchip"><div className="k">Gastos</div><div className="v tnum">{money(gastos)}</div></div>
         </div>
       </div>
 
-      <div className="sec-h"><h3>Mis cuentas</h3><a>Ver todas</a></div>
-      <div className="accounts">
-        {accounts.map((a) => (
-          <div className="acct" key={a.id}>
-            <div className="an">{a.name}</div>
-            <div className="av tnum">{money(a.balance)}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="sec-h"><h3>Movimientos</h3><a>Historial</a></div>
-      {days.map((d) => (
-        <div key={d}>
-          <div className="daylabel">{d}</div>
-          <div className="txlist">
-            {tx.filter((t) => t.date === d).map((t) => {
-              const c = catById(t.cat)
-              return (
-                <div className="tx" key={t.id}>
-                  <div className={'ic ' + c.tint}><Icon name={c.icon} size={19} /></div>
-                  <div className="mid">
-                    <div className="nm">{t.name}</div>
-                    <div className="mt">{t.account}</div>
-                  </div>
-                  <div className={'amt tnum ' + (t.amount > 0 ? 'in' : '')}>
-                    {t.amount > 0 ? '+' : '−'}{money(t.amount)}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      <div className="sec-h"><h3>Movimientos</h3></div>
+      {tx.length === 0 ? (
+        <div className="empty">
+          <div className="empty-ic">🪙</div>
+          <p>Todavía no registraste nada.<br />Tocá el botón <b>+</b> para tu primer movimiento.</p>
         </div>
-      ))}
+      ) : (
+        days.map((d) => (
+          <div key={d}>
+            <div className="daylabel">{d}</div>
+            <div className="txlist">
+              {tx.filter((t) => fmtDay(t.occurred_at) === d).map((t) => {
+                const c = catById(t.cat)
+                return (
+                  <div className="tx" key={t.id}>
+                    <div className={'ic ' + c.tint}><Icon name={c.icon} size={19} /></div>
+                    <div className="mid">
+                      <div className="nm">{t.name}</div>
+                      <div className="mt">{c.label}</div>
+                    </div>
+                    <div className={'amt tnum ' + (t.amount > 0 ? 'in' : '')}>
+                      {t.amount > 0 ? '+' : '−'}{money(t.amount)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))
+      )}
     </>
   )
 }
@@ -65,7 +65,7 @@ export function Budgets() {
       <h2 className="scr-title">Presupuestos</h2>
       <div className="bigmeter">
         <div className="top">
-          <div><div className="lbl" style={{ color: 'var(--ink-2)', fontSize: 12.5, fontWeight: 600 }}>Gastado este mes</div>
+          <div><div style={{ color: 'var(--ink-2)', fontSize: 12.5, fontWeight: 600 }}>Gastado este mes</div>
             <div className="big tnum">{money(total)}</div></div>
           <div style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>de <b className="tnum">{money(limit)}</b></div>
         </div>
@@ -88,6 +88,7 @@ export function Budgets() {
           </div>
         )
       })}
+      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
     </>
   )
 }
@@ -109,8 +110,7 @@ export function Reports() {
         <div className="bars">
           {bars.map((b) => (
             <div className={'bcol' + (b.hl ? ' hl' : '')} key={b.m}>
-              <div className="bar" style={{ height: b.h + '%' }} />
-              <div className="bl">{b.m}</div>
+              <div className="bar" style={{ height: b.h + '%' }} /><div className="bl">{b.m}</div>
             </div>
           ))}
         </div>
@@ -120,12 +120,12 @@ export function Reports() {
         <div className="legend">
           {legend.map(([n, c, v]) => (
             <div className="lg" key={n}>
-              <span className="sw" style={{ background: c }} />
-              <span className="ln">{n}</span><span className="lv tnum">{v}</span>
+              <span className="sw" style={{ background: c }} /><span className="ln">{n}</span><span className="lv tnum">{v}</span>
             </div>
           ))}
         </div>
       </div>
+      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
     </>
   )
 }

@@ -62,7 +62,11 @@ alter table transactions enable row level security;
 alter table budgets      enable row level security;
 alter table goals        enable row level security;
 
+drop policy if exists "own accounts" on accounts;
 create policy "own accounts"     on accounts     for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own transactions" on transactions;
 create policy "own transactions" on transactions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own budgets" on budgets;
 create policy "own budgets"      on budgets      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own goals" on goals;
 create policy "own goals"        on goals        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
