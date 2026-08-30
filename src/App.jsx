@@ -138,7 +138,7 @@ export default function App() {
     <div className="app">
       <div className="topbar">
         <div>
-          <div className="hello">Hola{nombre && ', ' + nombre} 👋</div>
+          <div className="hello">Hola{nombre && ', ' + nombre}</div>
           <h1>{screen === 'inicio' ? 'Buenas tardes' : ''}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -185,7 +185,7 @@ export default function App() {
     <>
       {content}
       <div className={'veil' + (veil ? ' show' : '')} aria-hidden="true">
-        <div className="veil-inner">🪙<span>Hasta luego</span></div>
+        <div className="veil-inner"><Icon name="wallet" size={40} /><span>Hasta luego</span></div>
       </div>
     </>
   )
@@ -340,12 +340,12 @@ function BudgetSheet({ initial, existing, onClose, onSave, onDelete }) {
   )
 }
 
-const GOAL_EMOJIS = ['✈️', '🛡️', '💻', '🏠', '🚗', '🎓', '💰', '🎁', '📱', '❤️']
+const GOAL_ICONS = ['plane', 'home', 'car', 'laptop', 'phone', 'cap', 'coin', 'gift', 'shield', 'heart']
 
 function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
   const editing = !!initial?.id
   const [open, setOpen] = useState(false)
-  const [emoji, setEmoji] = useState(initial?.emoji || '✈️')
+  const [icon, setIcon] = useState(initial?.emoji || 'plane')
   const [name, setName] = useState(initial?.name || '')
   const [due, setDue] = useState(initial?.due || '')
   const [raw, setRaw] = useState('')
@@ -355,7 +355,7 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
   const close = () => { setOpen(false); setTimeout(onClose, 280) }
   const submit = () => {
     if (editing) { if (amount) onContribute(initial, amount) }
-    else if (name && amount) onCreate({ name, emoji, target: amount, due: due || null })
+    else if (name && amount) onCreate({ name, emoji: icon, target: amount, due: due || null })
   }
   const p = editing ? Math.min(100, Math.round((initial.saved / initial.target) * 100)) : 0
 
@@ -368,7 +368,7 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
         {editing ? (
           <>
             <div className="sheet-head">
-              <span>{initial.emoji} {initial.name}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><Icon name={initial.emoji} size={18} /> {initial.name}</span>
               <button className="del-btn" onClick={() => onDelete(initial.id)} aria-label="Borrar">
                 <Icon name="trash" size={16} /> Borrar
               </button>
@@ -389,8 +389,10 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
             <div className="sheet-head"><span>Nueva meta</span></div>
             <div className="cat-lbl" style={{ marginTop: 0 }}>Ícono</div>
             <div className="emoji-row">
-              {GOAL_EMOJIS.map((e) => (
-                <button key={e} className={'emoji-pick' + (emoji === e ? ' sel' : '')} onClick={() => setEmoji(e)}>{e}</button>
+              {GOAL_ICONS.map((ic) => (
+                <button key={ic} className={'emoji-pick' + (icon === ic ? ' sel' : '')} onClick={() => setIcon(ic)} aria-label={ic}>
+                  <Icon name={ic} size={22} />
+                </button>
               ))}
             </div>
             <div className="cat-lbl">Nombre</div>

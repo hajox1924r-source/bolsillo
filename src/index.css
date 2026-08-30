@@ -120,7 +120,7 @@ button{font-family:inherit}
 
 .goal{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:15px;box-shadow:var(--shadow);margin-bottom:12px}
 .goal .gtop{display:flex;align-items:center;gap:11px;margin-bottom:12px}
-.goal .gemoji{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;background:var(--surface-2)}
+.goal .gemoji{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
 .goal .gname{font-size:14px;font-weight:700}
 .goal .gsub{font-size:11.5px;color:var(--ink-3)}
 .goal .gnums{margin-left:auto;text-align:right}
@@ -175,7 +175,7 @@ button{font-family:inherit}
 .splash{display:grid;place-items:center;color:var(--ink-3);font-weight:600}
 .auth{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 26px;text-align:center;
   background:radial-gradient(120% 75% at 50% -8%, var(--brand-soft), transparent 62%)}
-.auth-logo{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;font-size:36px;
+.auth-logo{width:74px;height:74px;border-radius:22px;display:grid;place-items:center;color:var(--on-brand);
   background:linear-gradient(150deg,var(--brand),var(--brand-ink));box-shadow:0 16px 34px -10px rgba(20,99,79,.55);
   animation:pop .55s cubic-bezier(.22,1.25,.36,1) both}
 .auth-title{font-family:"Bricolage Grotesque",serif;font-size:31px;font-weight:700;letter-spacing:-.02em;margin:16px 0 0;
@@ -205,7 +205,7 @@ button{font-family:inherit}
 
 /* Estado vacío */
 .empty{text-align:center;padding:36px 20px;color:var(--ink-3)}
-.empty-ic{font-size:38px;margin-bottom:10px}
+.empty-ic{width:64px;height:64px;margin:0 auto 12px;border-radius:20px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand)}
 .empty p{font-size:13.5px;line-height:1.6;margin:0}
 
 .demo-note{text-align:center;font-size:11px;color:var(--ink-3);margin:16px 0 0;font-style:italic}
@@ -359,10 +359,10 @@ button.budget:active{transform:scale(.99)}
 
 /* Metas: selector de emoji, input de texto, tarjeta como botón */
 .emoji-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
-.emoji-pick{flex:0 0 auto;width:44px;height:44px;border-radius:13px;border:2px solid transparent;background:var(--surface-2);
+.emoji-pick{flex:0 0 auto;width:44px;height:44px;border-radius:13px;border:2px solid transparent;background:var(--surface-2);color:var(--ink-2);
   font-size:22px;display:grid;place-items:center;cursor:pointer;transition:transform .15s ease, border-color .15s ease}
 .emoji-pick:active{transform:scale(.86)}
-.emoji-pick.sel{border-color:var(--brand);transform:scale(1.06)}
+.emoji-pick.sel{border-color:var(--brand);transform:scale(1.06);color:var(--brand)}
 .text-in{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
   color:var(--ink);font-size:15px;font-family:inherit;transition:border-color .15s ease, box-shadow .15s ease}
 .text-in::placeholder{color:var(--ink-3)}

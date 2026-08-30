@@ -66,7 +66,7 @@ export default function Auth() {
 
   return (
     <div className="auth">
-      <div className="auth-logo">🪙</div>
+      <div className="auth-logo"><Icon name="wallet" size={34} /></div>
       <h1 className="auth-title">Bolsillo</h1>
       <p className={'auth-sub ' + sw}>{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
 

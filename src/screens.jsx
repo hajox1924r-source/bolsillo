@@ -32,7 +32,7 @@ export function Home({ tx, onEdit }) {
       <div className="sec-h"><h3>Movimientos</h3></div>
       {tx.length === 0 ? (
         <div className="empty">
-          <div className="empty-ic">🪙</div>
+          <div className="empty-ic"><Icon name="wallet" size={30} /></div>
           <p>Todavía no registraste nada.<br />Tocá el botón <b>+</b> para tu primer movimiento.</p>
         </div>
       ) : (
@@ -95,7 +95,7 @@ export function Reports({ tx }) {
       <>
         <h2 className="scr-title">Reportes</h2>
         <div className="empty">
-          <div className="empty-ic">📊</div>
+          <div className="empty-ic"><Icon name="chart" size={30} /></div>
           <p>Registrá algunos gastos y acá vas a ver<br />en qué se te va la plata.</p>
         </div>
       </>
@@ -159,7 +159,7 @@ export function Budgets({ tx, budgets, onEdit }) {
       <>
         <h2 className="scr-title">Presupuestos</h2>
         <div className="empty">
-          <div className="empty-ic">🎯</div>
+          <div className="empty-ic"><Icon name="target" size={30} /></div>
           <p>Poné un límite mensual por categoría<br />y controlá en qué se te va la plata.</p>
         </div>
         <button className="savebtn" onClick={() => onEdit({})}>Crear presupuesto</button>
@@ -211,7 +211,7 @@ export function Goals({ goals, onEdit }) {
       <>
         <h2 className="scr-title">Metas</h2>
         <div className="empty">
-          <div className="empty-ic">🎯</div>
+          <div className="empty-ic"><Icon name="target" size={30} /></div>
           <p>Creá una meta de ahorro<br />y mirá cómo te vas acercando.</p>
         </div>
         <button className="savebtn" onClick={() => onEdit({})}>Crear meta</button>
@@ -227,7 +227,7 @@ export function Goals({ goals, onEdit }) {
         return (
           <button className="goal" key={g.id} onClick={() => onEdit(g)}>
             <div className="gtop">
-              <div className="gemoji">{g.emoji}</div>
+              <div className="gemoji"><Icon name={g.emoji} size={20} /></div>
               <div><div className="gname">{g.name}</div><div className="gsub">{fmtDue(g.due)}</div></div>
               <div className="gnums"><div className="gnow tnum">{money(g.saved)}</div><div className="gtot tnum">de {money(g.target)}</div></div>
             </div>
