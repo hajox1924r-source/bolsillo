@@ -218,8 +218,8 @@ button{font-family:inherit}
 .auth-form .savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}
 
 /* Transición al cambiar entre Entrar / Registrate + spinner */
-.btn-label{display:inline-block;animation:swap .28s ease}
-@keyframes swap{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.btn-label{display:inline-block;animation:swap .34s ease}
+@keyframes swap{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .spin{width:19px;height:19px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);
   border-top-color:var(--on-brand);display:inline-block;vertical-align:middle;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -227,3 +227,5 @@ button{font-family:inherit}
 .auth-form .savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05);
   box-shadow:0 14px 28px -8px rgba(20,99,79,.55)}
 .auth-form .savebtn:active:not(:disabled){transform:scale(.98)}
+
+.auth-sub{animation:swap .34s ease}
