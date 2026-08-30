@@ -177,7 +177,7 @@ button{font-family:inherit}
 .auth-title{font-family:"Bricolage Grotesque",serif;font-size:31px;font-weight:700;letter-spacing:-.02em;margin:16px 0 0;
   animation:rise .5s ease .06s both}
 .auth-sub{color:var(--ink-2);font-size:14px;margin:5px 0 28px;animation:rise .5s ease .12s both}
-.auth-form{width:100%;max-width:330px;display:flex;flex-direction:column;gap:12px;animation:rise .5s ease .18s both}
+.auth-form{width:100%;max-width:330px;display:flex;flex-direction:column;animation:rise .5s ease .18s both}
 .field{position:relative;display:flex;align-items:center}
 .field > svg{position:absolute;left:15px;color:var(--ink-3);pointer-events:none}
 .field input{width:100%;padding:15px 44px 15px 44px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
@@ -233,3 +233,10 @@ button{font-family:inherit}
 /* Crossfade del cambio de modo (transición, no keyframe) */
 .swapp{display:inline-block;transition:opacity .16s ease, transform .16s ease}
 .swapp.fading{opacity:0;transform:translateY(8px)}
+
+/* Campo extra colapsable */
+.auth-form > .field{margin-bottom:12px}
+.grow{display:grid;grid-template-rows:0fr;margin-bottom:0;transition:grid-template-rows .26s ease, margin-bottom .26s ease}
+.grow.open{grid-template-rows:1fr;margin-bottom:12px}
+.grow-inner{overflow:hidden;min-height:0}
+.grow .field{margin-bottom:0}

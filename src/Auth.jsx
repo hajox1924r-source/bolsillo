@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { supabase } from './lib/supabase.js'
 import Icon from './icons.jsx'
 
-// Traduce los mensajes más comunes de Supabase.
 const traducir = (m) =>
   /invalid login/i.test(m) ? 'Correo o contraseña incorrectos.'
   : /already registered/i.test(m) ? 'Ese correo ya tiene una cuenta. Entrá.'
@@ -11,18 +10,17 @@ const traducir = (m) =>
   : m
 
 export default function Auth() {
-  const [mode, setMode] = useState('in') // 'in' = entrar, 'up' = crear cuenta
+  const [mode, setMode] = useState('in')
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
+  const [pass2, setPass2] = useState('')
   const [show, setShow] = useState(false)
-  const [msg, setMsg] = useState(null) // { type: 'err'|'ok', text }
+  const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const [switching, setSwitching] = useState(false)
 
-  // Crossfade al cambiar de modo (con transición, funciona aunque el SO
-  // tenga los efectos de animación desactivados).
   const toggleMode = () => {
-    setMsg(null)
+    setMsg(null); setPass2('')
     setSwitching(true)
     setTimeout(() => {
       setMode((m) => (m === 'in' ? 'up' : 'in'))
@@ -32,6 +30,10 @@ export default function Auth() {
 
   const submit = async (e) => {
     e.preventDefault()
+    if (mode === 'up' && pass !== pass2) {
+      setMsg({ type: 'err', text: 'Las contraseñas no coinciden.' })
+      return
+    }
     setBusy(true); setMsg(null)
     const { data, error } =
       mode === 'in'
@@ -66,6 +68,19 @@ export default function Auth() {
             <Icon key={show} name={show ? 'eyeoff' : 'eye'} size={18} />
           </button>
         </div>
+
+        {/* Campo extra solo al registrarse */}
+        <div className={'grow' + (mode === 'up' ? ' open' : '')}>
+          <div className="grow-inner">
+            <div className="field">
+              <Icon name="lock" size={18} />
+              <input type={show ? 'text' : 'password'} placeholder="Repetir contraseña"
+                value={pass2} minLength={6} required={mode === 'up'} autoComplete="new-password"
+                onChange={(e) => setPass2(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
         <button className="savebtn" disabled={busy}>
           {busy
             ? <span className="spin" aria-label="Cargando" />
