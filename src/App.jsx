@@ -3,10 +3,11 @@ import { supabase, hasCloud } from './lib/supabase.js'
 import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals } from './screens.jsx'
-import { categories } from './data.js'
+import { categories, money } from './data.js'
 import {
   getTransactions, addTransaction, updateTransaction, deleteTransaction,
   getBudgets, upsertBudget, deleteBudget,
+  getGoals, createGoal, contributeGoal, deleteGoal,
 } from './lib/db.js'
 
 const NAV = [
@@ -24,6 +25,8 @@ export default function App() {
   const [budgets, setBudgets] = useState([])
   const [sheet, setSheet] = useState(null)     // movimiento
   const [bsheet, setBsheet] = useState(null)    // presupuesto
+  const [goals, setGoals] = useState([])
+  const [gsheet, setGsheet] = useState(null)    // meta
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
   const viewRef = useRef(null)
@@ -37,9 +40,10 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (hasCloud && !session) { setTx([]); setBudgets([]); return }
+    if (hasCloud && !session) { setTx([]); setBudgets([]); setGoals([]); return }
     getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
     getBudgets().then(setBudgets).catch((e) => console.error('Error presupuestos:', e.message))
+    getGoals().then(setGoals).catch((e) => console.error('Error metas:', e.message))
   }, [session])
 
   const go = (id) => {
@@ -108,6 +112,22 @@ export default function App() {
     } catch (e) { console.error('Error al borrar presupuesto:', e.message) }
   }
 
+  const saveGoal = async (d) => {
+    setGsheet(null)
+    try { const g = await createGoal(d); setGoals((l) => [...l, g]) }
+    catch (e) { console.error('Error meta:', e.message) }
+  }
+  const contribute = async (goal, amount) => {
+    setGsheet(null)
+    try { const g = await contributeGoal(goal, amount); setGoals((l) => l.map((x) => (x.id === g.id ? g : x))) }
+    catch (e) { console.error('Error aporte:', e.message) }
+  }
+  const delGoal = async (id) => {
+    setGsheet(null)
+    try { await deleteGoal(id); setGoals((l) => l.filter((g) => g.id !== id)) }
+    catch (e) { console.error('Error al borrar meta:', e.message) }
+  }
+
   const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
     || session?.user?.email?.split('@')[0] || ''
 
@@ -137,7 +157,7 @@ export default function App() {
         {screen === 'inicio' && <Home tx={tx} onEdit={setSheet} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
-        {screen === 'metas' && <Goals />}
+        {screen === 'metas' && <Goals goals={goals} onEdit={setGsheet} />}
       </div>
 
       <nav className="navbar">
@@ -153,6 +173,10 @@ export default function App() {
       {bsheet && (
         <BudgetSheet initial={bsheet} existing={budgets.map((b) => b.cat)}
           onClose={() => setBsheet(null)} onSave={saveBudget} onDelete={delBudget} />
+      )}
+      {gsheet && (
+        <GoalSheet initial={gsheet} onClose={() => setGsheet(null)}
+          onCreate={saveGoal} onContribute={contribute} onDelete={delGoal} />
       )}
     </div>
   )
@@ -311,6 +335,75 @@ function BudgetSheet({ initial, existing, onClose, onSave, onDelete }) {
         <button className="savebtn" disabled={!amount || !cat} onClick={save}>
           {editing ? 'Guardar cambios' : 'Crear presupuesto'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+const GOAL_EMOJIS = ['✈️', '🛡️', '💻', '🏠', '🚗', '🎓', '💰', '🎁', '📱', '❤️']
+
+function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
+  const editing = !!initial?.id
+  const [open, setOpen] = useState(false)
+  const [emoji, setEmoji] = useState(initial?.emoji || '✈️')
+  const [name, setName] = useState(initial?.name || '')
+  const [due, setDue] = useState(initial?.due || '')
+  const [raw, setRaw] = useState('')
+  const amount = Number(raw || 0)
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+  const submit = () => {
+    if (editing) { if (amount) onContribute(initial, amount) }
+    else if (name && amount) onCreate({ name, emoji, target: amount, due: due || null })
+  }
+  const p = editing ? Math.min(100, Math.round((initial.saved / initial.target) * 100)) : 0
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Meta">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+
+        {editing ? (
+          <>
+            <div className="sheet-head">
+              <span>{initial.emoji} {initial.name}</span>
+              <button className="del-btn" onClick={() => onDelete(initial.id)} aria-label="Borrar">
+                <Icon name="trash" size={16} /> Borrar
+              </button>
+            </div>
+            <div className="track" style={{ marginBottom: 8 }}><div className="fill" style={{ width: p + '%' }} /></div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', textAlign: 'center', marginBottom: 6 }}>
+              {money(initial.saved)} de {money(initial.target)} · {p}%
+            </div>
+            <div className="cat-lbl">Sumar al ahorro</div>
+            <div className="amount-in inc"><span className="cur">$</span><span className="num tnum">{amount ? amount.toLocaleString('es-CO') : '0'}</span></div>
+            <Keypad onKey={pressDigits(setRaw)} />
+            <button className="savebtn" disabled={!amount} onClick={submit}>
+              Sumar {amount ? money(amount) : ''} al ahorro
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="sheet-head"><span>Nueva meta</span></div>
+            <div className="cat-lbl" style={{ marginTop: 0 }}>Ícono</div>
+            <div className="emoji-row">
+              {GOAL_EMOJIS.map((e) => (
+                <button key={e} className={'emoji-pick' + (emoji === e ? ' sel' : '')} onClick={() => setEmoji(e)}>{e}</button>
+              ))}
+            </div>
+            <div className="cat-lbl">Nombre</div>
+            <input className="text-in" value={name} maxLength={40}
+              onChange={(e) => setName(e.target.value)} placeholder="Ej: Viaje a Cartagena" />
+            <div className="cat-lbl">Fecha límite (opcional)</div>
+            <input className="text-in" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+            <div className="cat-lbl">Meta de ahorro</div>
+            <div className="amount-in"><span className="cur">$</span><span className="num tnum">{amount ? amount.toLocaleString('es-CO') : '0'}</span></div>
+            <Keypad onKey={pressDigits(setRaw)} />
+            <button className="savebtn" disabled={!name || !amount} onClick={submit}>Crear meta</button>
+          </>
+        )}
       </div>
     </div>
   )

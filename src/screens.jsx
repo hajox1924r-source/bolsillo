@@ -1,5 +1,5 @@
 import Icon from './icons.jsx'
-import { money, catById, budgets, goals } from './data.js'
+import { money, catById } from './data.js'
 
 const pct = (a, b) => Math.min(100, Math.round((a / b) * 100))
 const fmtDay = (iso) =>
@@ -201,26 +201,42 @@ export function Budgets({ tx, budgets, onEdit }) {
   )
 }
 
-export function Goals() {
+export function Goals({ goals, onEdit }) {
+  const fmtDue = (d) => d
+    ? new Date(d + 'T00:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+    : 'Sin fecha límite'
+
+  if (goals.length === 0) {
+    return (
+      <>
+        <h2 className="scr-title">Metas</h2>
+        <div className="empty">
+          <div className="empty-ic">🎯</div>
+          <p>Creá una meta de ahorro<br />y mirá cómo te vas acercando.</p>
+        </div>
+        <button className="savebtn" onClick={() => onEdit({})}>Crear meta</button>
+      </>
+    )
+  }
+
   return (
     <>
       <h2 className="scr-title">Metas</h2>
       {goals.map((g) => {
-        const p = pct(g.now, g.total)
+        const p = pct(g.saved, g.target)
         return (
-          <div className="goal" key={g.name}>
+          <button className="goal" key={g.id} onClick={() => onEdit(g)}>
             <div className="gtop">
               <div className="gemoji">{g.emoji}</div>
-              <div><div className="gname">{g.name}</div><div className="gsub">{g.sub}</div></div>
-              <div className="gnums"><div className="gnow tnum">{money(g.now)}</div><div className="gtot tnum">de {money(g.total)}</div></div>
+              <div><div className="gname">{g.name}</div><div className="gsub">{fmtDue(g.due)}</div></div>
+              <div className="gnums"><div className="gnow tnum">{money(g.saved)}</div><div className="gtot tnum">de {money(g.target)}</div></div>
             </div>
             <div className="track"><div className={'fill' + (p < 25 ? ' warn' : '')} style={{ width: p + '%' }} /></div>
             <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 8 }}>{p}% completado</div>
-          </div>
+          </button>
         )
       })}
-      <button className="savebtn ghost">+ Nueva meta de ahorro</button>
-      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
+      <button className="savebtn ghost" onClick={() => onEdit({})}>+ Nueva meta de ahorro</button>
     </>
   )
 }

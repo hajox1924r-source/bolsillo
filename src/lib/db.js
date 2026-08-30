@@ -89,3 +89,51 @@ export async function deleteBudget(id) {
   const { error } = await supabase.from('budgets').delete().eq('id', id)
   if (error) throw error
 }
+
+// ---------- Metas ----------
+const GKEY = 'bolsillo.goals'
+const localG = () => { try { return JSON.parse(localStorage.getItem(GKEY)) || [] } catch { return [] } }
+const fromG = (r) => ({ id: r.id, name: r.name, emoji: r.emoji, target: Number(r.target_amount), saved: Number(r.saved_amount), due: r.due_date })
+
+export async function getGoals() {
+  if (!hasCloud) return localG()
+  const { data, error } = await supabase.from('goals').select('*').order('created_at', { ascending: true })
+  if (error) throw error
+  return data.map(fromG)
+}
+
+export async function createGoal({ name, emoji, target, due }) {
+  if (!hasCloud) {
+    const row = { id: Date.now(), name, emoji, target, saved: 0, due: due || null }
+    localStorage.setItem(GKEY, JSON.stringify([...localG(), row]))
+    return row
+  }
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.from('goals')
+    .insert({ user_id: user.id, name, emoji, target_amount: target, saved_amount: 0, due_date: due || null })
+    .select().single()
+  if (error) throw error
+  return fromG(data)
+}
+
+export async function contributeGoal(goal, amount) {
+  const nuevo = Number(goal.saved) + amount
+  if (!hasCloud) {
+    const list = localG().map((g) => (g.id === goal.id ? { ...g, saved: nuevo } : g))
+    localStorage.setItem(GKEY, JSON.stringify(list))
+    return list.find((g) => g.id === goal.id)
+  }
+  const { data, error } = await supabase.from('goals')
+    .update({ saved_amount: nuevo }).eq('id', goal.id).select().single()
+  if (error) throw error
+  return fromG(data)
+}
+
+export async function deleteGoal(id) {
+  if (!hasCloud) {
+    localStorage.setItem(GKEY, JSON.stringify(localG().filter((g) => g.id !== id)))
+    return
+  }
+  const { error } = await supabase.from('goals').delete().eq('id', id)
+  if (error) throw error
+}

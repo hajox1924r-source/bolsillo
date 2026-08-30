@@ -356,3 +356,16 @@ button.budget:active{transform:scale(.99)}
 /* Pulso al tocar una tecla */
 .key{transition:transform .14s ease, background .14s ease, box-shadow .14s ease}
 .key.down{transform:scale(.86);background:var(--brand-soft);box-shadow:0 5px 14px -5px rgba(20,99,79,.45)}
+
+/* Metas: selector de emoji, input de texto, tarjeta como botón */
+.emoji-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.emoji-pick{flex:0 0 auto;width:44px;height:44px;border-radius:13px;border:2px solid transparent;background:var(--surface-2);
+  font-size:22px;display:grid;place-items:center;cursor:pointer;transition:transform .15s ease, border-color .15s ease}
+.emoji-pick:active{transform:scale(.86)}
+.emoji-pick.sel{border-color:var(--brand);transform:scale(1.06)}
+.text-in{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);
+  color:var(--ink);font-size:15px;font-family:inherit;transition:border-color .15s ease, box-shadow .15s ease}
+.text-in::placeholder{color:var(--ink-3)}
+.text-in:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+button.goal{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.goal:active{transform:scale(.99)}
