@@ -46,6 +46,9 @@ export default function App() {
     catch (e) { console.error('Error al guardar:', e.message) }
   }
 
+  const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
+    || session?.user?.email?.split('@')[0] || ''
+
   if (hasCloud && !ready) return <div className="app splash">Cargando…</div>
   if (hasCloud && !session) return <div className="app"><Auth /></div>
 
@@ -53,7 +56,7 @@ export default function App() {
     <div className="app">
       <div className="topbar">
         <div>
-          <div className="hello">Hola 👋</div>
+          <div className="hello">Hola{nombre && ', ' + nombre} 👋</div>
           <h1>{screen === 'inicio' ? 'Buenas tardes' : ''}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
