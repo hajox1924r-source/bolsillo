@@ -367,7 +367,8 @@ function DateField({ value, onChange }) {
         <Icon name="calendar" size={16} />
       </button>
       {open && (
-        <div className="cal">
+        <div className="cal-overlay" onClick={() => setOpen(false)}>
+          <div className="cal" onClick={(e) => e.stopPropagation()}>
           <div className="cal-head">
             <button type="button" onClick={() => setView(new Date(y, m - 1, 1))} aria-label="Mes anterior"><Icon name="chevL" size={16} /></button>
             <span className="cal-title">{view.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}</span>
@@ -382,6 +383,7 @@ function DateField({ value, onChange }) {
           <div className="cal-foot">
             <button type="button" onClick={() => { onChange(''); setOpen(false) }}>Quitar</button>
             <button type="button" onClick={() => { const t = new Date(); setView(new Date(t.getFullYear(), t.getMonth(), 1)) }}>Hoy</button>
+          </div>
           </div>
         </div>
       )}
