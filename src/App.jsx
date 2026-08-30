@@ -493,6 +493,7 @@ function SyncSheet({ onClose, onImported }) {
   const [cat, setCat] = useState('mercado')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [scanned, setScanned] = useState(0)
   const opts = categories.filter((c) => c.id !== 'ingreso')
 
   useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
@@ -504,7 +505,9 @@ function SyncSheet({ onClose, onImported }) {
     ;(async () => {
       try {
         const imported = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
-        const found = (await fetchGmailMovements()).filter((m) => !imported.has(m.id))
+        const res = await fetchGmailMovements()
+        setScanned(res.scanned)
+        const found = res.items.filter((m) => !imported.has(m.id))
         if (!alive) return
         if (!found.length) { setStatus('empty'); return }
         setItems(found)
@@ -558,8 +561,11 @@ function SyncSheet({ onClose, onImported }) {
 
         {status === 'empty' && (
           <div className="sync-center">
-            <div className="empty-ic"><Icon name="check" size={30} /></div>
-            <p className="sync-msg">No encontré movimientos nuevos en tus correos.</p>
+            <div className="empty-ic"><Icon name="mail" size={30} /></div>
+            <p className="sync-msg">{scanned === 0
+              ? 'No encontré correos de bancos en los últimos 45 días.'
+              : `Revisé ${scanned} correos, pero no pude extraer el monto de ninguno (hay que afinar el lector para tu banco).`}</p>
+            <button className="savebtn ghost" onClick={connectGmail}>Reconectar Gmail</button>
           </div>
         )}
 

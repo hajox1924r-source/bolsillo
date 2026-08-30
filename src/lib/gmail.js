@@ -76,8 +76,9 @@ export async function fetchGmailMovements(days = 45) {
   if (!token) { const e = new Error('sin token'); e.status = 401; throw e }
   const q = encodeURIComponent('newer_than:' + days + 'd ' + BANK_Q)
   const list = await gapi('messages?maxResults=40&q=' + q, token)
+  const msgs = list.messages || []
   const out = []
-  for (const mm of (list.messages || [])) {
+  for (const mm of msgs) {
     const msg = await gapi('messages/' + mm.id + '?format=full', token)
     const headers = Object.fromEntries((msg.payload.headers || []).map((h) => [h.name.toLowerCase(), h.value]))
     const subject = headers.subject || ''
@@ -91,5 +92,5 @@ export async function fetchGmailMovements(days = 45) {
       amount: INCOME_RE.test(text) ? amount : -amount,
     })
   }
-  return out
+  return { scanned: msgs.length, items: out }
 }
