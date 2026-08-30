@@ -68,7 +68,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="view">
+      <div className="view" key={screen}>
         {screen === 'inicio' && <Home tx={tx} />}
         {screen === 'presupuestos' && <Budgets />}
         {screen === 'reportes' && <Reports />}
