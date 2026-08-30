@@ -216,3 +216,14 @@ button{font-family:inherit}
 .field .eye svg{animation:eyepop .26s ease}
 @keyframes eyepop{from{opacity:.2;transform:scale(.6) rotate(-8deg)}to{opacity:1;transform:none}}
 .auth-form .savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}
+
+/* Transición al cambiar entre Entrar / Registrate + spinner */
+.btn-label{display:inline-block;animation:swap .28s ease}
+@keyframes swap{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.spin{width:19px;height:19px;border-radius:50%;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:var(--on-brand);display:inline-block;vertical-align:middle;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.auth-form .savebtn{overflow:hidden}
+.auth-form .savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05);
+  box-shadow:0 14px 28px -8px rgba(20,99,79,.55)}
+.auth-form .savebtn:active:not(:disabled){transform:scale(.98)}

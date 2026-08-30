@@ -34,7 +34,7 @@ export default function Auth() {
     <div className="auth">
       <div className="auth-logo">🪙</div>
       <h1 className="auth-title">Bolsillo</h1>
-      <p className="auth-sub">{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
+      <p className="auth-sub" key={mode}>{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
 
       <form className="auth-form" onSubmit={submit}>
         <div className="field">
@@ -53,14 +53,16 @@ export default function Auth() {
           </button>
         </div>
         <button className="savebtn" disabled={busy}>
-          {busy ? 'Un momento…' : mode === 'in' ? 'Entrar' : 'Crear cuenta'}
+          {busy
+            ? <span className="spin" aria-label="Cargando" />
+            : <span className="btn-label" key={mode}>{mode === 'in' ? 'Entrar' : 'Crear cuenta'}</span>}
         </button>
       </form>
 
       {msg && <p className={'auth-msg ' + msg.type}>{msg.text}</p>}
 
       <button className="auth-switch" onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setMsg(null) }}>
-        {mode === 'in' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Entrá'}
+        <span className="btn-label" key={mode}>{mode === 'in' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Entrá'}</span>
       </button>
     </div>
   )
