@@ -14,6 +14,14 @@ export function saveGmailToken(token) {
   try { localStorage.setItem(GKEY, JSON.stringify({ t: token, exp: Date.now() + 55 * 60000 })) } catch { /* nada */ }
 }
 
+// Al cargar, captura el provider_token del hash de la URL (antes de que Supabase lo limpie).
+try {
+  if (window.location.hash && window.location.hash.includes('provider_token')) {
+    const t = new URLSearchParams(window.location.hash.slice(1)).get('provider_token')
+    if (t) saveGmailToken(t)
+  }
+} catch { /* nada */ }
+
 // Reconecta pidiendo permiso de lectura de Gmail (redirige a Google).
 export async function connectGmail() {
   await supabase.auth.signInWithOAuth({
