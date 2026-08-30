@@ -157,7 +157,8 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
             </button>
           </div>
         )}
-        <div className="seg">
+        <div className={'seg ' + type}>
+          <span className="seg-thumb" />
           <button className={type === 'gasto' ? 'on' : ''} onClick={() => setType('gasto')}>Gasto</button>
           <button className={type === 'ingreso' ? 'on inc' : ''} onClick={() => { setType('ingreso'); setCat('ingreso') }}>Ingreso</button>
         </div>

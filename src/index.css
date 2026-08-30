@@ -148,9 +148,9 @@ button{font-family:inherit}
 .sheet-x:active{transform:scale(.9)}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 .grab{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:5px;border-radius:99px;background:var(--line)}
-.seg{display:flex;background:var(--surface-2);border-radius:13px;padding:4px;margin-bottom:18px}
-.seg button{flex:1;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-2);padding:9px;border-radius:10px;cursor:pointer}
-.seg button.on{background:var(--surface);box-shadow:var(--shadow);color:var(--expense)}
+.seg{position:relative;display:flex;background:var(--surface-2);border-radius:13px;padding:4px;margin-bottom:18px}
+.seg button{position:relative;z-index:1;flex:1;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-2);padding:9px;border-radius:10px;cursor:pointer}
+.seg button.on{color:var(--expense)}
 .seg button.on.inc{color:var(--income)}
 .amount-in{text-align:center}
 .amount-in .cur{font-family:"Bricolage Grotesque",serif;font-size:22px;color:var(--ink-3);vertical-align:super}
@@ -328,3 +328,9 @@ button{font-family:inherit}
   transition:opacity .2s ease, transform .28s cubic-bezier(.22,1.5,.36,1)}
 .navb.on::before{opacity:1;transform:translateX(-50%) scale(1)}
 .navb.on svg{transform:scale(1.06)}
+
+/* Pastilla deslizante Gasto/Ingreso */
+.seg-thumb{position:absolute;top:4px;left:4px;width:calc(50% - 4px);height:calc(100% - 8px);border-radius:10px;
+  background:var(--surface);box-shadow:var(--shadow);z-index:0;
+  transition:transform .28s cubic-bezier(.22,1,.36,1)}
+.seg.ingreso .seg-thumb{transform:translateX(100%)}
