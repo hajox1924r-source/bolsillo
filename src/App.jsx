@@ -121,8 +121,16 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
   const [raw, setRaw] = useState(editing ? String(Math.abs(initial.amount)) : '')
   const [cat, setCat] = useState(initial?.cat || 'mercado')
+  const [open, setOpen] = useState(false)
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
+
+  // Animación de entrada/salida por transición (funciona sin efectos del SO).
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOpen(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
 
   const press = (k) => {
     if (k === 'del') setRaw((r) => r.slice(0, -1))
@@ -136,9 +144,11 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   }
 
   return (
-    <div className="scrim" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={editing ? 'Editar movimiento' : 'Registrar movimiento'}>
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()}
+        role="dialog" aria-label={editing ? 'Editar movimiento' : 'Registrar movimiento'}>
         <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
         {editing && (
           <div className="sheet-head">
             <span>Editar movimiento</span>
