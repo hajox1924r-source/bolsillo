@@ -266,3 +266,52 @@ button{font-family:inherit}
 /* Dona de reportes */
 .donutwrap{display:flex;align-items:center;gap:16px}
 .donut{width:140px;height:140px;flex:0 0 auto}
+
+/* ============ Pulido global (transiciones: se ven sin depender del SO) ============ */
+/* Teclado numérico */
+.key{transition:background .12s ease, transform .08s ease}
+.key:active{transform:scale(.92);background:var(--brand-soft)}
+
+/* Categorías */
+.cat .cc{transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease}
+.cat .cl{transition:color .16s ease}
+.cat:hover .cc{transform:translateY(-2px)}
+.cat:active .cc{transform:scale(.9)}
+.cat.sel .cc{transform:scale(1.08);box-shadow:0 8px 18px -8px rgba(20,99,79,.5)}
+.cat.sel .cl{color:var(--brand);font-weight:700}
+
+/* Segmento gasto / ingreso */
+.seg button{transition:background .18s ease, color .18s ease, box-shadow .18s ease}
+
+/* Botón guardar (en toda la app) */
+.savebtn{transition:transform .1s ease, filter .15s ease, box-shadow .15s ease}
+.savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05);box-shadow:0 12px 26px -8px rgba(20,99,79,.5)}
+.savebtn:active:not(:disabled){transform:scale(.985)}
+
+/* Barra inferior */
+.navb{transition:color .18s ease}
+.navb svg{transition:transform .2s cubic-bezier(.22,1.3,.36,1)}
+.navb.on svg{transform:translateY(-2px) scale(1.1)}
+.navb:active svg{transform:scale(.88)}
+
+/* Botón flotante + */
+.fab{transition:transform .16s ease, box-shadow .16s ease}
+.fab:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 16px 30px -8px rgba(20,99,79,.7)}
+.fab:active{transform:translateX(-50%) scale(.93)}
+
+/* Botones de ícono (tema / salir) */
+.iconbtn{transition:border-color .15s ease, color .15s ease, background .15s ease, transform .1s ease}
+.iconbtn:hover{border-color:var(--brand);color:var(--brand)}
+.iconbtn:active{transform:scale(.92)}
+
+/* Tarjetas: leve elevación al pasar el mouse */
+.card,.budget,.goal,.acct{transition:transform .18s ease, box-shadow .18s ease}
+.card:hover,.budget:hover,.goal:hover,.acct:hover{transform:translateY(-2px)}
+
+/* Las barras de progreso se llenan animadas al cambiar de valor */
+.fill{transition:width .6s cubic-bezier(.22,1,.36,1)}
+
+/* Las barras de reportes crecen al abrir la sección */
+.bar{animation:growbar .55s cubic-bezier(.22,1,.36,1) both}
+@keyframes growbar{from{height:0}}
+.donut circle{transition:stroke-dasharray .6s ease}
