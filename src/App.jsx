@@ -43,6 +43,7 @@ export default function App() {
   const toggleTheme = () => {
     const next = dark ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
+    try { localStorage.setItem('bolsillo.theme', next) } catch { /* almacenamiento no disponible */ }
     setDark(!dark)
   }
 
