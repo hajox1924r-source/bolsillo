@@ -399,7 +399,7 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
             <input className="text-in" value={name} maxLength={40}
               onChange={(e) => setName(e.target.value)} placeholder="Ej: Viaje a Cartagena" />
             <div className="cat-lbl">Fecha límite (opcional)</div>
-            <input className="text-in" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
+            <DateField value={due} onChange={setDue} />
             <div className="cat-lbl">Meta de ahorro</div>
             <div className="amount-in"><span className="cur">$</span><span className="num tnum">{amount ? amount.toLocaleString('es-CO') : '0'}</span></div>
             <Keypad onKey={pressDigits(setRaw)} />
@@ -407,6 +407,55 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+const DOW = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA']
+
+function DateField({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const [view, setView] = useState(() => (value ? new Date(value + 'T00:00:00') : new Date()))
+  const sel = value ? new Date(value + 'T00:00:00') : null
+  const y = view.getFullYear(), m = view.getMonth()
+  const startDow = new Date(y, m, 1).getDay()
+  const daysIn = new Date(y, m + 1, 0).getDate()
+  const cells = []
+  for (let i = 0; i < startDow; i++) cells.push(null)
+  for (let d = 1; d <= daysIn; d++) cells.push(d)
+
+  const pick = (d) => {
+    onChange(`${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+    setOpen(false)
+  }
+  const label = sel ? sel.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Sin fecha'
+  const isSel = (d) => sel && sel.getDate() === d && sel.getMonth() === m && sel.getFullYear() === y
+
+  return (
+    <div className="datefield">
+      <button type="button" className="text-in datebtn" onClick={() => setOpen((o) => !o)}>
+        <span className={sel ? '' : 'ph'}>{label}</span>
+        <Icon name="calendar" size={16} />
+      </button>
+      {open && (
+        <div className="cal">
+          <div className="cal-head">
+            <button type="button" onClick={() => setView(new Date(y, m - 1, 1))} aria-label="Mes anterior"><Icon name="chevL" size={16} /></button>
+            <span className="cal-title">{view.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}</span>
+            <button type="button" onClick={() => setView(new Date(y, m + 1, 1))} aria-label="Mes siguiente"><Icon name="chevR" size={16} /></button>
+          </div>
+          <div className="cal-dow">{DOW.map((x, i) => <span key={i}>{x}</span>)}</div>
+          <div className="cal-grid">
+            {cells.map((d, i) => (d === null
+              ? <span key={i} />
+              : <button type="button" key={i} className={'cal-day tnum' + (isSel(d) ? ' sel' : '')} onClick={() => pick(d)}>{d}</button>))}
+          </div>
+          <div className="cal-foot">
+            <button type="button" onClick={() => { onChange(''); setOpen(false) }}>Quitar</button>
+            <button type="button" onClick={() => { const t = new Date(); setView(new Date(t.getFullYear(), t.getMonth(), 1)) }}>Hoy</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
