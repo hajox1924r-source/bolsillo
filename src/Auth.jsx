@@ -17,6 +17,18 @@ export default function Auth() {
   const [show, setShow] = useState(false)
   const [msg, setMsg] = useState(null) // { type: 'err'|'ok', text }
   const [busy, setBusy] = useState(false)
+  const [switching, setSwitching] = useState(false)
+
+  // Crossfade al cambiar de modo (con transición, funciona aunque el SO
+  // tenga los efectos de animación desactivados).
+  const toggleMode = () => {
+    setMsg(null)
+    setSwitching(true)
+    setTimeout(() => {
+      setMode((m) => (m === 'in' ? 'up' : 'in'))
+      setSwitching(false)
+    }, 160)
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -30,11 +42,13 @@ export default function Auth() {
     setBusy(false)
   }
 
+  const sw = 'swapp' + (switching ? ' fading' : '')
+
   return (
     <div className="auth">
       <div className="auth-logo">🪙</div>
       <h1 className="auth-title">Bolsillo</h1>
-      <p className="auth-sub" key={mode}>{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
+      <p className={'auth-sub ' + sw}>{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
 
       <form className="auth-form" onSubmit={submit}>
         <div className="field">
@@ -55,14 +69,14 @@ export default function Auth() {
         <button className="savebtn" disabled={busy}>
           {busy
             ? <span className="spin" aria-label="Cargando" />
-            : <span className="btn-label" key={mode}>{mode === 'in' ? 'Entrar' : 'Crear cuenta'}</span>}
+            : <span className={sw}>{mode === 'in' ? 'Entrar' : 'Crear cuenta'}</span>}
         </button>
       </form>
 
       {msg && <p className={'auth-msg ' + msg.type}>{msg.text}</p>}
 
-      <button className="auth-switch" onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setMsg(null) }}>
-        <span className="btn-label" key={mode}>{mode === 'in' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Entrá'}</span>
+      <button className="auth-switch" onClick={toggleMode}>
+        <span className={sw}>{mode === 'in' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Entrá'}</span>
       </button>
     </div>
   )

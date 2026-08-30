@@ -229,3 +229,7 @@ button{font-family:inherit}
 .auth-form .savebtn:active:not(:disabled){transform:scale(.98)}
 
 .auth-sub{animation:swap .34s ease}
+
+/* Crossfade del cambio de modo (transición, no keyframe) */
+.swapp{display:inline-block;transition:opacity .16s ease, transform .16s ease}
+.swapp.fading{opacity:0;transform:translateY(8px)}
