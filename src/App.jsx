@@ -164,10 +164,16 @@ function NavBtn({ n, on, go }) {
 
 // Teclado numérico compartido
 function Keypad({ onKey }) {
+  const tap = (e, k) => {
+    const el = e.currentTarget
+    el.classList.add('down')
+    setTimeout(() => el.classList.remove('down'), 140)
+    onKey(k)
+  }
   return (
     <div className="kbd">
       {['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', 'del'].map((k) => (
-        <button className="key" key={k} onClick={() => onKey(k)}>{k === 'del' ? '⌫' : k}</button>
+        <button className="key" key={k} onClick={(e) => tap(e, k)}>{k === 'del' ? '⌫' : k}</button>
       ))}
     </div>
   )

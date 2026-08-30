@@ -352,3 +352,7 @@ button{font-family:inherit}
 /* Tarjeta de presupuesto como botón */
 button.budget{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 button.budget:active{transform:scale(.99)}
+
+/* Pulso al tocar una tecla */
+.key{transition:transform .14s ease, background .14s ease, box-shadow .14s ease}
+.key.down{transform:scale(.86);background:var(--brand-soft);box-shadow:0 5px 14px -5px rgba(20,99,79,.45)}
