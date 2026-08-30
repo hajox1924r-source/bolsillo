@@ -369,3 +369,19 @@ button.budget:active{transform:scale(.99)}
 .text-in:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
 button.goal{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 button.goal:active{transform:scale(.99)}
+
+/* Esquema de color nativo (calendario del date, selects) según el tema */
+:root{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark}}
+
+/* Barras de desplazamiento personalizadas */
+*{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px;border:2px solid transparent;background-clip:padding-box}
+*::-webkit-scrollbar-thumb:hover{background:var(--ink-3);background-clip:padding-box}
+
+/* Ícono del calendario en el input de fecha, acorde al tema */
+.text-in[type="date"]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.7}
+.text-in[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
