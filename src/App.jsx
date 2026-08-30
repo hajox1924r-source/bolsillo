@@ -8,7 +8,9 @@ import {
   getTransactions, addTransaction, updateTransaction, deleteTransaction,
   getBudgets, upsertBudget, deleteBudget,
   getGoals, createGoal, contributeGoal, deleteGoal,
+  addManyTransactions,
 } from './lib/db.js'
+import { connectGmail, gmailToken, saveGmailToken, fetchGmailMovements } from './lib/gmail.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -27,6 +29,7 @@ export default function App() {
   const [bsheet, setBsheet] = useState(null)    // presupuesto
   const [goals, setGoals] = useState([])
   const [gsheet, setGsheet] = useState(null)    // meta
+  const [syncOpen, setSyncOpen] = useState(false)
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
   const viewRef = useRef(null)
@@ -35,7 +38,10 @@ export default function App() {
   useEffect(() => {
     if (!hasCloud) return
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s)
+      if (s?.provider_token) saveGmailToken(s.provider_token)
+    })
     return () => sub.subscription.unsubscribe()
   }, [])
 
@@ -128,6 +134,9 @@ export default function App() {
     catch (e) { console.error('Error al borrar meta:', e.message) }
   }
 
+  const importMany = (added) => setTx((list) =>
+    [...added, ...list].sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at)))
+
   const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
     || session?.user?.email?.split('@')[0] || ''
 
@@ -142,6 +151,11 @@ export default function App() {
           <h1>{screen === 'inicio' ? 'Buenas tardes' : ''}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          {hasCloud && (
+            <button className="iconbtn" onClick={() => setSyncOpen(true)} aria-label="Sincronizar con Gmail">
+              <Icon name="mail" size={18} />
+            </button>
+          )}
           <button className="iconbtn" onClick={toggleTheme} aria-label="Cambiar tema">
             <Icon name={dark ? 'sun' : 'moon'} size={18} />
           </button>
@@ -178,6 +192,7 @@ export default function App() {
         <GoalSheet initial={gsheet} onClose={() => setGsheet(null)}
           onCreate={saveGoal} onContribute={contribute} onDelete={delGoal} />
       )}
+      {syncOpen && <SyncSheet onClose={() => setSyncOpen(false)} onImported={importMany} />}
     </div>
   )
 
@@ -463,6 +478,125 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
             <div className="amount-in"><span className="cur">$</span><span className="num tnum">{amount ? amount.toLocaleString('es-CO') : '0'}</span></div>
             <Keypad onKey={pressDigits(setRaw)} />
             <button className="savebtn" disabled={!name || !amount} onClick={submit}>Crear meta</button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SyncSheet({ onClose, onImported }) {
+  const [open, setOpen] = useState(false)
+  const [status, setStatus] = useState('loading') // loading | needauth | list | empty | error
+  const [items, setItems] = useState([])
+  const [sel, setSel] = useState({})
+  const [cat, setCat] = useState('mercado')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const opts = categories.filter((c) => c.id !== 'ingreso')
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+
+  useEffect(() => {
+    if (!gmailToken()) { setStatus('needauth'); return }
+    let alive = true
+    ;(async () => {
+      try {
+        const imported = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
+        const found = (await fetchGmailMovements()).filter((m) => !imported.has(m.id))
+        if (!alive) return
+        if (!found.length) { setStatus('empty'); return }
+        setItems(found)
+        setSel(Object.fromEntries(found.map((f) => [f.id, true])))
+        setStatus('list')
+      } catch (e) {
+        if (!alive) return
+        if (e.status === 401 || e.status === 403) setStatus('needauth')
+        else { setErr(e.message); setStatus('error') }
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const toggle = (id) => setSel((s) => ({ ...s, [id]: !s[id] }))
+  const chosen = items.filter((i) => sel[i.id])
+
+  const doImport = async () => {
+    if (!chosen.length) return
+    setBusy(true)
+    const payload = chosen.map((i) => ({
+      cat: i.amount > 0 ? 'ingreso' : cat, name: i.merchant, amount: i.amount, occurred_at: i.date + 'T12:00:00',
+    }))
+    try {
+      const added = await addManyTransactions(payload)
+      const ids = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
+      chosen.forEach((i) => ids.add(i.id))
+      localStorage.setItem('bolsillo.gmailids', JSON.stringify([...ids]))
+      onImported(added)
+      close()
+    } catch (e) { setErr(e.message); setStatus('error'); setBusy(false) }
+  }
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Sincronizar con Gmail">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head"><span>Sincronizar con Gmail</span></div>
+
+        {status === 'loading' && <p className="sync-msg">Leyendo tus correos del banco…</p>}
+
+        {status === 'needauth' && (
+          <div className="sync-center">
+            <div className="empty-ic"><Icon name="mail" size={30} /></div>
+            <p className="sync-msg">Conectá tu Gmail para leer los correos de tu banco y crear los movimientos automáticamente.</p>
+            <button className="savebtn" onClick={connectGmail}>Conectar Gmail</button>
+            <p className="demo-note">Solo lectura. Google mostrará una pantalla de “app no verificada”: Avanzado → Continuar.</p>
+          </div>
+        )}
+
+        {status === 'empty' && (
+          <div className="sync-center">
+            <div className="empty-ic"><Icon name="check" size={30} /></div>
+            <p className="sync-msg">No encontré movimientos nuevos en tus correos.</p>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="sync-center">
+            <p className="sync-msg" style={{ color: 'var(--expense)' }}>No pude leer los correos.<br />{err}</p>
+            <button className="savebtn ghost" onClick={connectGmail}>Reconectar Gmail</button>
+          </div>
+        )}
+
+        {status === 'list' && (
+          <>
+            <p className="sync-msg">Encontré {items.length} movimiento{items.length === 1 ? '' : 's'}. Revisá y elegí cuáles importar:</p>
+            <div className="cat-lbl" style={{ marginTop: 0 }}>Categoría para los gastos</div>
+            <div className="cats">
+              {opts.map((c) => (
+                <button className={'cat' + (cat === c.id ? ' sel' : '')} key={c.id} onClick={() => setCat(c.id)}>
+                  <div className={'cc ' + c.tint}><Icon name={c.icon} size={21} /></div>
+                  <span className="cl">{c.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="sync-list">
+              {items.map((i) => (
+                <button key={i.id} type="button" className={'sync-row' + (sel[i.id] ? ' on' : '')} onClick={() => toggle(i.id)}>
+                  <span className="chk">{sel[i.id] && <Icon name="check" size={13} />}</span>
+                  <span className="mid">
+                    <span className="nm">{i.merchant}</span>
+                    <span className="mt">{i.date}</span>
+                  </span>
+                  <span className={'amt tnum ' + (i.amount > 0 ? 'in' : '')}>{i.amount > 0 ? '+' : '−'}{money(i.amount)}</span>
+                </button>
+              ))}
+            </div>
+            <button className="savebtn" disabled={!chosen.length || busy} onClick={doImport}>
+              {busy ? 'Importando…' : `Importar ${chosen.length} movimiento${chosen.length === 1 ? '' : 's'}`}
+            </button>
           </>
         )}
       </div>

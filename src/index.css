@@ -410,3 +410,17 @@ button.goal:active{transform:scale(.99)}
 .cal-foot{display:flex;justify-content:space-between;margin-top:8px}
 .cal-foot button{border:0;background:none;color:var(--brand);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px}
 .cal-foot button:hover{text-decoration:underline}
+
+/* Sincronización con Gmail */
+.sync-msg{font-size:13px;color:var(--ink-2);margin:6px 2px 12px;line-height:1.5}
+.sync-center{text-align:center;padding:8px 0 4px}
+.sync-center .empty-ic{margin:0 auto 12px}
+.sync-list{max-height:240px;overflow-y:auto;margin:10px 0 6px;display:flex;flex-direction:column;gap:2px}
+.sync-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 6px;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:12px;transition:background .12s ease}
+.sync-row:hover{background:var(--surface-2)}
+.sync-row .chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;flex:0 0 auto;color:var(--on-brand);transition:background .15s ease,border-color .15s ease}
+.sync-row.on .chk{background:var(--brand);border-color:var(--brand)}
+.sync-row .mid{flex:1;min-width:0;display:flex;flex-direction:column}
+.sync-row .nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-row .mt{font-size:11px;color:var(--ink-3)}
+.sync-row .amt{font-family:"Bricolage Grotesque",serif;font-weight:600;font-size:13.5px;white-space:nowrap}
