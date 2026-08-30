@@ -18,7 +18,8 @@ export default function App() {
   const [ready, setReady] = useState(!hasCloud)
   const [screen, setScreen] = useState('inicio')
   const [tx, setTx] = useState([])
-  const [sheet, setSheet] = useState(null) // null | {} (nuevo) | tx (editar)
+  const [sheet, setSheet] = useState(null)
+  const [veil, setVeil] = useState(false)
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
 
   useEffect(() => {
@@ -37,6 +38,16 @@ export default function App() {
     const next = dark ? 'light' : 'dark'
     document.documentElement.setAttribute('data-theme', next)
     setDark(!dark)
+  }
+
+  // Cierre de sesión con transición: velo → salir → revelar login.
+  const logout = () => {
+    setVeil(true)
+    setTimeout(async () => {
+      await supabase.auth.signOut()
+      setScreen('inicio')
+      setTimeout(() => setVeil(false), 140)
+    }, 300)
   }
 
   const saveTx = async (data) => {
@@ -63,10 +74,10 @@ export default function App() {
   const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
     || session?.user?.email?.split('@')[0] || ''
 
-  if (hasCloud && !ready) return <div className="app splash">Cargando…</div>
-  if (hasCloud && !session) return <div className="app"><Auth /></div>
-
-  return (
+  let content
+  if (hasCloud && !ready) content = <div className="app splash">Cargando…</div>
+  else if (hasCloud && !session) content = <div className="app"><Auth /></div>
+  else content = (
     <div className="app">
       <div className="topbar">
         <div>
@@ -78,7 +89,7 @@ export default function App() {
             <Icon name={dark ? 'sun' : 'moon'} size={18} />
           </button>
           {hasCloud && (
-            <button className="iconbtn" onClick={() => supabase.auth.signOut()} aria-label="Cerrar sesión">
+            <button className="iconbtn" onClick={logout} aria-label="Cerrar sesión">
               <Icon name="logout" size={18} />
             </button>
           )}
@@ -101,10 +112,17 @@ export default function App() {
         <Icon name="plus" size={26} />
       </button>
 
-      {sheet && (
-        <TxSheet initial={sheet} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />
-      )}
+      {sheet && <TxSheet initial={sheet} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
     </div>
+  )
+
+  return (
+    <>
+      {content}
+      <div className={'veil' + (veil ? ' show' : '')} aria-hidden="true">
+        <div className="veil-inner">🪙<span>Hasta luego</span></div>
+      </div>
+    </>
   )
 }
 
@@ -126,7 +144,6 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   const amount = Number(raw || 0)
   const selIdx = Math.max(0, opts.findIndex((o) => o.id === cat))
 
-  // Animación de entrada/salida por transición (funciona sin efectos del SO).
   useEffect(() => {
     const id = requestAnimationFrame(() => setOpen(true))
     return () => cancelAnimationFrame(id)

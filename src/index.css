@@ -339,3 +339,12 @@ button{font-family:inherit}
 .cat-thumb{position:absolute;top:0;left:7px;width:48px;height:48px;border-radius:15px;border:2.5px solid var(--brand);
   background:rgba(20,99,79,.06);box-shadow:0 8px 18px -8px rgba(20,99,79,.45);pointer-events:none;z-index:2;
   transition:transform .28s cubic-bezier(.22,1,.36,1)}
+
+/* Velo de cierre de sesión */
+.veil{position:fixed;inset:0;z-index:60;background:var(--ground);opacity:0;pointer-events:none;
+  display:grid;place-items:center;transition:opacity .3s ease}
+.veil.show{opacity:1;pointer-events:auto}
+.veil-inner{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:44px;color:var(--ink-3);
+  transform:scale(.92);transition:transform .3s ease}
+.veil.show .veil-inner{transform:scale(1)}
+.veil-inner span{font-size:14px;font-weight:600}
