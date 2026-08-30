@@ -43,8 +43,8 @@ button{font-family:inherit}
 /* App shell: móvil primero, centrado en pantallas grandes */
 .app{max-width:480px;margin:0 auto;min-height:100%;background:var(--surface);position:relative;
   display:flex;flex-direction:column;box-shadow:var(--shadow)}
-.view{flex:1;overflow-y:auto;padding:18px 18px 108px;animation:viewin .28s ease}
-@keyframes viewin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.view{flex:1;overflow-y:auto;padding:18px 18px 108px;transition:opacity .18s ease, transform .18s ease}
+.view.fading{opacity:0;transform:translateY(8px)}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 4px}
 .topbar .hello{font-size:12.5px;color:var(--ink-3);font-weight:600}
 .topbar h1{font-family:"Bricolage Grotesque",serif;font-size:22px;margin:2px 0 0;letter-spacing:-.02em}

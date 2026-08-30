@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase, hasCloud } from './lib/supabase.js'
 import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
@@ -25,6 +25,8 @@ export default function App() {
   const [sheet, setSheet] = useState(null)     // movimiento
   const [bsheet, setBsheet] = useState(null)    // presupuesto
   const [veil, setVeil] = useState(false)
+  const [fading, setFading] = useState(false)
+  const viewRef = useRef(null)
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
 
   useEffect(() => {
@@ -39,6 +41,16 @@ export default function App() {
     getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
     getBudgets().then(setBudgets).catch((e) => console.error('Error presupuestos:', e.message))
   }, [session])
+
+  const go = (id) => {
+    if (id === screen) return
+    setFading(true)
+    setTimeout(() => {
+      setScreen(id)
+      if (viewRef.current) viewRef.current.scrollTop = 0
+      setFading(false)
+    }, 170)
+  }
 
   const toggleTheme = () => {
     const next = dark ? 'light' : 'dark'
@@ -121,7 +133,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="view" key={screen}>
+      <div className={'view' + (fading ? ' fading' : '')} ref={viewRef}>
         {screen === 'inicio' && <Home tx={tx} onEdit={setSheet} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
@@ -129,9 +141,9 @@ export default function App() {
       </div>
 
       <nav className="navbar">
-        {NAV.slice(0, 2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />)}
+        {NAV.slice(0, 2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={go} />)}
         <button className="navb slot" aria-hidden="true" />
-        {NAV.slice(2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />)}
+        {NAV.slice(2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={go} />)}
       </nav>
       <button className="fab" onClick={() => setSheet({})} aria-label="Registrar movimiento">
         <Icon name="plus" size={26} />
