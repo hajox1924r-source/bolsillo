@@ -141,13 +141,13 @@ button{font-family:inherit}
 /* Hoja de registro */
 .scrim{position:fixed;inset:0;background:rgba(10,22,17,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .3s ease}
 .scrim.open{opacity:1}
-.sheet{position:relative;width:100%;max-width:480px;background:var(--surface);border-radius:26px 26px 0 0;padding:10px 20px 26px;z-index:21;box-shadow:0 -14px 40px -14px rgba(0,0,0,.4);max-height:94%;overflow-y:auto;transform:translateY(100%);transition:transform .36s cubic-bezier(.22,1,.36,1)}
+.sheet{position:relative;width:100%;max-width:480px;background:var(--surface);border-radius:26px 26px 0 0;padding:50px 20px 26px;z-index:21;box-shadow:0 -14px 40px -14px rgba(0,0,0,.4);max-height:94%;overflow-y:auto;transform:translateY(100%);transition:transform .36s cubic-bezier(.22,1,.36,1)}
 .sheet.open{transform:none}
-.sheet-x{position:absolute;top:14px;right:16px;width:34px;height:34px;border:0;border-radius:10px;background:var(--surface-2);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s,transform .1s;z-index:2}
+.sheet-x{position:absolute;top:12px;right:14px;width:34px;height:34px;border:0;border-radius:10px;background:var(--surface-2);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s,transform .1s;z-index:2}
 .sheet-x:hover{background:var(--line);color:var(--ink)}
 .sheet-x:active{transform:scale(.9)}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
-.grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:4px auto 14px}
+.grab{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:5px;border-radius:99px;background:var(--line)}
 .seg{display:flex;background:var(--surface-2);border-radius:13px;padding:4px;margin-bottom:18px}
 .seg button{flex:1;border:0;background:none;font-size:13px;font-weight:600;color:var(--ink-2);padding:9px;border-radius:10px;cursor:pointer}
 .seg button.on{background:var(--surface);box-shadow:var(--shadow);color:var(--expense)}
@@ -319,3 +319,12 @@ button{font-family:inherit}
 .bar{animation:growbar .55s cubic-bezier(.22,1,.36,1) both}
 @keyframes growbar{from{height:0}}
 .donut circle{transition:stroke-dasharray .6s ease}
+
+/* Pastilla nav */
+.navb{position:relative}
+.navb svg{position:relative;z-index:1}
+.navb::before{content:"";position:absolute;top:4px;left:50%;width:44px;height:30px;border-radius:12px;
+  background:var(--brand-soft);opacity:0;transform:translateX(-50%) scale(.5);
+  transition:opacity .2s ease, transform .28s cubic-bezier(.22,1.5,.36,1)}
+.navb.on::before{opacity:1;transform:translateX(-50%) scale(1)}
+.navb.on svg{transform:scale(1.06)}
