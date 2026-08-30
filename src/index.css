@@ -240,3 +240,14 @@ button{font-family:inherit}
 .grow.open{grid-template-rows:1fr;margin-bottom:12px}
 .grow-inner{overflow:hidden;min-height:0}
 .grow .field{margin-bottom:0}
+
+/* Botón de Google + separador */
+.gbtn{width:100%;max-width:330px;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);
+  font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;
+  transition:border-color .15s,background .15s,transform .1s,box-shadow .15s}
+.gbtn:hover{border-color:var(--brand);background:var(--surface-2);box-shadow:var(--shadow)}
+.gbtn:active{transform:scale(.98)}
+.divider{display:flex;align-items:center;gap:12px;width:100%;max-width:330px;margin:16px 0;
+  color:var(--ink-3);font-size:12px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
