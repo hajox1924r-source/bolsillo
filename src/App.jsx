@@ -124,6 +124,7 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   const [open, setOpen] = useState(false)
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
+  const selIdx = Math.max(0, opts.findIndex((o) => o.id === cat))
 
   // Animación de entrada/salida por transición (funciona sin efectos del SO).
   useEffect(() => {
@@ -168,6 +169,7 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
         </div>
         <div className="cat-lbl">Categoría</div>
         <div className="cats">
+          <span className="cat-thumb" style={{ transform: `translateX(${selIdx * 71}px)` }} />
           {opts.map((c) => (
             <button className={'cat' + (cat === c.id ? ' sel' : '')} key={c.id} onClick={() => setCat(c.id)}>
               <div className={'cc ' + c.tint}><Icon name={c.icon} size={21} /></div>
