@@ -4,7 +4,7 @@ import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals } from './screens.jsx'
 import { categories } from './data.js'
-import { getTransactions, addTransaction } from './lib/db.js'
+import { getTransactions, addTransaction, updateTransaction, deleteTransaction } from './lib/db.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -15,13 +15,12 @@ const NAV = [
 
 export default function App() {
   const [session, setSession] = useState(null)
-  const [ready, setReady] = useState(!hasCloud) // sin nube no hay login
+  const [ready, setReady] = useState(!hasCloud)
   const [screen, setScreen] = useState('inicio')
   const [tx, setTx] = useState([])
-  const [adding, setAdding] = useState(false)
+  const [sheet, setSheet] = useState(null) // null | {} (nuevo) | tx (editar)
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark')
 
-  // Sesión de Supabase
   useEffect(() => {
     if (!hasCloud) return
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
@@ -29,7 +28,6 @@ export default function App() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  // Cargar movimientos (al entrar, o siempre en modo local)
   useEffect(() => {
     if (hasCloud && !session) { setTx([]); return }
     getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
@@ -40,10 +38,26 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', next)
     setDark(!dark)
   }
-  const addTx = async (t) => {
-    setAdding(false)
-    try { setTx([await addTransaction(t), ...tx]) }
-    catch (e) { console.error('Error al guardar:', e.message) }
+
+  const saveTx = async (data) => {
+    setSheet(null)
+    try {
+      if (data.id) {
+        const u = await updateTransaction(data.id, data)
+        setTx((list) => list.map((t) => (t.id === u.id ? u : t)))
+      } else {
+        const n = await addTransaction(data)
+        setTx((list) => [n, ...list])
+      }
+    } catch (e) { console.error('Error al guardar:', e.message) }
+  }
+
+  const delTx = async (id) => {
+    setSheet(null)
+    try {
+      await deleteTransaction(id)
+      setTx((list) => list.filter((t) => t.id !== id))
+    } catch (e) { console.error('Error al borrar:', e.message) }
   }
 
   const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
@@ -72,9 +86,9 @@ export default function App() {
       </div>
 
       <div className="view" key={screen}>
-        {screen === 'inicio' && <Home tx={tx} />}
+        {screen === 'inicio' && <Home tx={tx} onEdit={setSheet} />}
         {screen === 'presupuestos' && <Budgets />}
-        {screen === 'reportes' && <Reports />}
+        {screen === 'reportes' && <Reports tx={tx} />}
         {screen === 'metas' && <Goals />}
       </div>
 
@@ -83,11 +97,13 @@ export default function App() {
         <button className="navb slot" aria-hidden="true" />
         {NAV.slice(2).map((n) => <NavBtn key={n.id} n={n} on={screen === n.id} go={setScreen} />)}
       </nav>
-      <button className="fab" onClick={() => setAdding(true)} aria-label="Registrar movimiento">
+      <button className="fab" onClick={() => setSheet({})} aria-label="Registrar movimiento">
         <Icon name="plus" size={26} />
       </button>
 
-      {adding && <AddSheet onClose={() => setAdding(false)} onSave={addTx} />}
+      {sheet && (
+        <TxSheet initial={sheet} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />
+      )}
     </div>
   )
 }
@@ -100,10 +116,11 @@ function NavBtn({ n, on, go }) {
   )
 }
 
-function AddSheet({ onClose, onSave }) {
-  const [type, setType] = useState('gasto')
-  const [raw, setRaw] = useState('')
-  const [cat, setCat] = useState('mercado')
+function TxSheet({ initial, onClose, onSave, onDelete }) {
+  const editing = !!initial?.id
+  const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
+  const [raw, setRaw] = useState(editing ? String(Math.abs(initial.amount)) : '')
+  const [cat, setCat] = useState(initial?.cat || 'mercado')
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
 
@@ -115,13 +132,21 @@ function AddSheet({ onClose, onSave }) {
   const save = () => {
     if (!amount) return
     const c = opts.find((o) => o.id === cat) || opts[0]
-    onSave({ cat: c.id, name: c.label, amount: type === 'gasto' ? -amount : amount })
+    onSave({ id: initial?.id, cat: c.id, name: c.label, amount: type === 'gasto' ? -amount : amount })
   }
 
   return (
     <div className="scrim" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Registrar movimiento">
+      <div className="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={editing ? 'Editar movimiento' : 'Registrar movimiento'}>
         <div className="grab" />
+        {editing && (
+          <div className="sheet-head">
+            <span>Editar movimiento</span>
+            <button className="del-btn" onClick={() => onDelete(initial.id)} aria-label="Borrar">
+              <Icon name="trash" size={16} /> Borrar
+            </button>
+          </div>
+        )}
         <div className="seg">
           <button className={type === 'gasto' ? 'on' : ''} onClick={() => setType('gasto')}>Gasto</button>
           <button className={type === 'ingreso' ? 'on inc' : ''} onClick={() => { setType('ingreso'); setCat('ingreso') }}>Ingreso</button>
@@ -144,7 +169,9 @@ function AddSheet({ onClose, onSave }) {
             <button className="key" key={k} onClick={() => press(k)}>{k === 'del' ? '⌫' : k}</button>
           ))}
         </div>
-        <button className="savebtn" disabled={!amount} onClick={save}>Guardar movimiento</button>
+        <button className="savebtn" disabled={!amount} onClick={save}>
+          {editing ? 'Guardar cambios' : 'Guardar movimiento'}
+        </button>
       </div>
     </div>
   )

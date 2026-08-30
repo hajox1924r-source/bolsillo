@@ -5,7 +5,13 @@ const pct = (a, b) => Math.min(100, Math.round((a / b) * 100))
 const fmtDay = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
 
-export function Home({ tx }) {
+// Color por categoría para las gráficas.
+const CAT_COLOR = {
+  mercado: '#D65B45', comida: '#E8A23C', transporte: '#3E74B8',
+  hogar: '#14634F', ocio: '#7C5CC2', ingreso: '#2E9E6B',
+}
+
+export function Home({ tx, onEdit }) {
   const ingresos = tx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const gastos = tx.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
   const balance = ingresos + gastos
@@ -37,7 +43,7 @@ export function Home({ tx }) {
               {tx.filter((t) => fmtDay(t.occurred_at) === d).map((t) => {
                 const c = catById(t.cat)
                 return (
-                  <div className="tx" key={t.id}>
+                  <button className="tx" key={t.id} onClick={() => onEdit(t)}>
                     <div className={'ic ' + c.tint}><Icon name={c.icon} size={19} /></div>
                     <div className="mid">
                       <div className="nm">{t.name}</div>
@@ -46,13 +52,95 @@ export function Home({ tx }) {
                     <div className={'amt tnum ' + (t.amount > 0 ? 'in' : '')}>
                       {t.amount > 0 ? '+' : '−'}{money(t.amount)}
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
           </div>
         ))
       )}
+    </>
+  )
+}
+
+export function Reports({ tx }) {
+  const gastos = tx.filter((t) => t.amount < 0)
+  const total = gastos.reduce((s, t) => s - t.amount, 0)
+
+  // Gasto por categoría
+  const porCat = {}
+  gastos.forEach((t) => { porCat[t.cat] = (porCat[t.cat] || 0) - t.amount })
+  const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1])
+  let off = 25
+  const segs = cats.map(([cat, val]) => {
+    const p = (val / total) * 100
+    const s = { cat, val, p, off, color: CAT_COLOR[cat] || '#999' }
+    off -= p
+    return s
+  })
+
+  // Tendencia: últimos 6 meses
+  const now = new Date()
+  const meses = [...Array(6)].map((_, i) => new Date(now.getFullYear(), now.getMonth() - 5 + i, 1))
+  const tend = meses.map((d) => ({
+    label: d.toLocaleDateString('es-CO', { month: 'short' }),
+    value: gastos
+      .filter((t) => { const x = new Date(t.occurred_at); return x.getFullYear() === d.getFullYear() && x.getMonth() === d.getMonth() })
+      .reduce((s, t) => s - t.amount, 0),
+  }))
+  const maxM = Math.max(...tend.map((m) => m.value), 1)
+
+  if (total === 0) {
+    return (
+      <>
+        <h2 className="scr-title">Reportes</h2>
+        <div className="empty">
+          <div className="empty-ic">📊</div>
+          <p>Registrá algunos gastos y acá vas a ver<br />en qué se te va la plata.</p>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <h2 className="scr-title">Reportes</h2>
+
+      <div className="card">
+        <h4>Gasto por categoría</h4>
+        <div className="donutwrap">
+          <svg className="donut" viewBox="0 0 42 42">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" strokeWidth="6" />
+            {segs.map((s) => (
+              <circle key={s.cat} cx="21" cy="21" r="15.9155" fill="none" stroke={s.color} strokeWidth="6"
+                strokeDasharray={`${s.p} ${100 - s.p}`} strokeDashoffset={s.off} />
+            ))}
+            <text x="21" y="20.5" textAnchor="middle" fontSize="5" fontWeight="700" fill="var(--ink)">{money(total)}</text>
+            <text x="21" y="25.5" textAnchor="middle" fontSize="2.6" fill="var(--ink-3)">gastado</text>
+          </svg>
+          <div className="legend">
+            {segs.map((s) => (
+              <div className="lg" key={s.cat}>
+                <span className="sw" style={{ background: s.color }} />
+                <span className="ln">{catById(s.cat).label}</span>
+                <span className="lv tnum">{Math.round(s.p)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h4>Tendencia de gasto · 6 meses</h4>
+        <div className="bars">
+          {tend.map((m, i) => (
+            <div className={'bcol' + (i === 5 ? ' hl' : '')} key={m.label + i}>
+              <div className="bar" style={{ height: Math.max(4, (m.value / maxM) * 100) + '%' }} />
+              <div className="bl">{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   )
 }
@@ -93,43 +181,6 @@ export function Budgets() {
   )
 }
 
-export function Reports() {
-  const bars = [
-    { m: 'Mar', h: 58 }, { m: 'Abr', h: 72 }, { m: 'May', h: 64 },
-    { m: 'Jun', h: 80 }, { m: 'Jul', h: 69 }, { m: 'Ago', h: 88, hl: true },
-  ]
-  const legend = [
-    ['Mercado', '#14634F', '30%'], ['Restaurantes', '#E8A23C', '25%'],
-    ['Transporte', '#3E74B8', '17%'], ['Servicios', '#7C5CC2', '16%'], ['Otros', '#D65B45', '12%'],
-  ]
-  return (
-    <>
-      <h2 className="scr-title">Reportes</h2>
-      <div className="card">
-        <h4>Tendencia de gasto · 6 meses</h4>
-        <div className="bars">
-          {bars.map((b) => (
-            <div className={'bcol' + (b.hl ? ' hl' : '')} key={b.m}>
-              <div className="bar" style={{ height: b.h + '%' }} /><div className="bl">{b.m}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="card">
-        <h4>Gasto por categoría · agosto</h4>
-        <div className="legend">
-          {legend.map(([n, c, v]) => (
-            <div className="lg" key={n}>
-              <span className="sw" style={{ background: c }} /><span className="ln">{n}</span><span className="lv tnum">{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
-    </>
-  )
-}
-
 export function Goals() {
   return (
     <>
@@ -149,6 +200,7 @@ export function Goals() {
         )
       })}
       <button className="savebtn ghost">+ Nueva meta de ahorro</button>
+      <p className="demo-note">Datos de ejemplo · pronto se conectan a tu base</p>
     </>
   )
 }

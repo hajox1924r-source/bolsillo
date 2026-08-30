@@ -251,3 +251,18 @@ button{font-family:inherit}
 .divider{display:flex;align-items:center;gap:12px;width:100%;max-width:330px;margin:16px 0;
   color:var(--ink-3);font-size:12px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* Movimiento como botón (editable) */
+.tx{width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.tx:active{transform:scale(.99)}
+
+/* Encabezado de la hoja al editar */
+.sheet-head{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 14px}
+.sheet-head span{font-size:14px;font-weight:700}
+.del-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--expense-soft);background:var(--expense-soft);
+  color:var(--expense);font:inherit;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:10px;cursor:pointer}
+.del-btn:hover{background:var(--expense);color:#fff}
+
+/* Dona de reportes */
+.donutwrap{display:flex;align-items:center;gap:16px}
+.donut{width:140px;height:140px;flex:0 0 auto}

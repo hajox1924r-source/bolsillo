@@ -30,3 +30,24 @@ export async function addTransaction({ cat, name, amount }) {
   if (error) throw error
   return fromRow(data)
 }
+
+export async function updateTransaction(id, { cat, name, amount }) {
+  if (!hasCloud) {
+    const list = local().map((t) => (t.id === id ? { ...t, cat, name, amount } : t))
+    localStorage.setItem(KEY, JSON.stringify(list))
+    return list.find((t) => t.id === id)
+  }
+  const { data, error } = await supabase.from('transactions')
+    .update({ category: cat, description: name, amount }).eq('id', id).select().single()
+  if (error) throw error
+  return fromRow(data)
+}
+
+export async function deleteTransaction(id) {
+  if (!hasCloud) {
+    localStorage.setItem(KEY, JSON.stringify(local().filter((t) => t.id !== id)))
+    return
+  }
+  const { error } = await supabase.from('transactions').delete().eq('id', id)
+  if (error) throw error
+}
