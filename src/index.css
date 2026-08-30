@@ -205,3 +205,14 @@ button{font-family:inherit}
 .empty p{font-size:13.5px;line-height:1.6;margin:0}
 
 .demo-note{text-align:center;font-size:11px;color:var(--ink-3);margin:16px 0 0;font-style:italic}
+
+/* Micro-interacciones del login */
+.field input:hover:not(:focus){border-color:var(--brand);background:var(--surface)}
+.field input{transition:border-color .15s,box-shadow .15s,background .15s}
+.field:focus-within > svg{color:var(--brand);transition:color .15s}
+.field .eye{transition:color .15s,background .15s,transform .12s}
+.field .eye:hover{transform:scale(1.14)}
+.field .eye:active{transform:scale(.86)}
+.field .eye svg{animation:eyepop .26s ease}
+@keyframes eyepop{from{opacity:.2;transform:scale(.6) rotate(-8deg)}to{opacity:1;transform:none}}
+.auth-form .savebtn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}

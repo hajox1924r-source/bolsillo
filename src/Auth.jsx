@@ -49,7 +49,7 @@ export default function Auth() {
             onChange={(e) => setPass(e.target.value)} />
           <button type="button" className="eye" onClick={() => setShow(!show)}
             aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
-            <Icon name={show ? 'eyeoff' : 'eye'} size={18} />
+            <Icon key={show} name={show ? 'eyeoff' : 'eye'} size={18} />
           </button>
         </div>
         <button className="savebtn" disabled={busy}>
