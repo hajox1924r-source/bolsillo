@@ -10,7 +10,7 @@ import {
   getGoals, createGoal, contributeGoal, deleteGoal,
   addManyTransactions,
 } from './lib/db.js'
-import { connectGmail, gmailToken, saveGmailToken, fetchGmailMovements } from './lib/gmail.js'
+import { connectGmail, gmailToken, saveGmailToken, fetchGmailMovements, gmailProfile } from './lib/gmail.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -28,6 +28,7 @@ function SyncSheet({ onClose, onImported }) {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [scanned, setScanned] = useState(0)
+  const [connEmail, setConnEmail] = useState('')
   const opts = categories.filter((c) => c.id !== 'ingreso')
 
   useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
@@ -38,6 +39,9 @@ function SyncSheet({ onClose, onImported }) {
     let alive = true
     ;(async () => {
       try {
+        const prof = await gmailProfile()
+        if (!alive) return
+        setConnEmail(prof.emailAddress || '')
         const imported = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
         const res = await fetchGmailMovements()
         setScanned(res.scanned)
@@ -81,8 +85,9 @@ function SyncSheet({ onClose, onImported }) {
         <div className="grab" />
         <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
         <div className="sheet-head"><span>Sincronizar con Gmail</span></div>
+        {connEmail && <div className="conn-ok"><Icon name="check" size={13} /> Conectado como {connEmail}</div>}
 
-        {status === 'loading' && <p className="sync-msg">Leyendo tus correos del banco…</p>}
+        {status === 'loading' && <p className="sync-msg">{connEmail ? 'Leyendo tus correos del banco…' : 'Verificando conexión…'}</p>}
 
         {status === 'needauth' && (
           <div className="sync-center">
