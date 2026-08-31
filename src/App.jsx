@@ -10,7 +10,7 @@ import {
   getGoals, createGoal, contributeGoal, deleteGoal,
   addManyTransactions,
 } from './lib/db.js'
-import { connectGmail, gmailToken, fetchGmailMovements, gmailProfile } from './lib/gmail.js'
+import { connectGmail, gmailToken, fetchGmailMovements, gmailProfile, tokenScopes } from './lib/gmail.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -56,8 +56,16 @@ function SyncSheet({ onClose, onImported }) {
   const handleConnect = async () => {
     setErr('')
     setStatus('loading')
-    try { await connectGmail(); await load() }
-    catch (e) { setErr(e.message); setStatus('needauth') }
+    try {
+      await connectGmail()
+      const sc = await tokenScopes()
+      if (!/gmail/i.test(sc)) {
+        setErr('El permiso de Gmail NO quedó en el token. Concedido: ' + sc)
+        setStatus('needauth')
+        return
+      }
+      await load()
+    } catch (e) { setErr(e.message); setStatus('needauth') }
   }
 
   useEffect(() => {

@@ -72,6 +72,17 @@ function guessMerchant(text, subject) {
 const INCOME_RE = /(recib|abono|consign|n[oó]mina|te enviaron|te transfirieron|entr[oó] a tu|ingreso|devoluci|reembolso|pago recibido)/i
 const BANK_Q = '(from:bancolombia OR from:nequi OR from:davivienda OR from:bbva OR from:scotiabank OR from:lulobank OR subject:(compra OR transacción OR transferencia OR retiro OR consignación OR "pago"))'
 
+export async function tokenScopes() {
+  const t = gmailToken()
+  if (!t) return "(sin token)"
+  try {
+    const r = await fetch("https://oauth2.googleapis.com/tokeninfo?access_token=" + encodeURIComponent(t))
+    if (!r.ok) return "(token no valido: " + r.status + ")"
+    const j = await r.json()
+    return j.scope || "(sin scopes)"
+  } catch { return "(error al consultar)" }
+}
+
 export async function gmailProfile() {
   const token = gmailToken()
   if (!token) { const e = new Error('sin token'); e.status = 401; throw e }
