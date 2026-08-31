@@ -1,51 +1,46 @@
-import { supabase } from './supabase.js'
-
-// El token de Google (provider_token) vence ~1h; lo guardamos con su vencimiento.
+// Conexión con Gmail usando Google Identity Services (popup, sin redirección).
 const GKEY = 'bolsillo.gtoken'
+const CLIENT_ID = '647546328865-pni44bk1r0mqeqsv24f5bhfpce1b66bp.apps.googleusercontent.com'
+const SCOPE = 'https://www.googleapis.com/auth/gmail.readonly'
 
 export function gmailToken() {
-  try {
-    const j = JSON.parse(localStorage.getItem(GKEY) || 'null')
-    if (j && j.exp > Date.now()) return j.t
-  } catch { /* nada */ }
+  try { const j = JSON.parse(localStorage.getItem(GKEY) || 'null'); if (j && j.exp > Date.now()) return j.t } catch { /* nada */ }
   return null
 }
 export function saveGmailToken(token) {
   try { localStorage.setItem(GKEY, JSON.stringify({ t: token, exp: Date.now() + 55 * 60000 })) } catch { /* nada */ }
 }
 
-// Al cargar, captura el provider_token del hash de la URL (antes de que Supabase lo limpie).
-try {
-  if (window.location.hash && window.location.hash.includes('provider_token')) {
-    const t = new URLSearchParams(window.location.hash.slice(1)).get('provider_token')
-    if (t) saveGmailToken(t)
-  }
-} catch { /* nada */ }
+let tokenClient = null
+function client() {
+  if (tokenClient) return tokenClient
+  const g = window.google
+  if (!g || !g.accounts || !g.accounts.oauth2) return null
+  tokenClient = g.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPE, callback: () => {} })
+  return tokenClient
+}
 
-// Reconecta pidiendo permiso de lectura de Gmail (redirige a Google).
-export async function connectGmail() {
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      scopes: 'https://www.googleapis.com/auth/gmail.readonly',
-      redirectTo: window.location.origin,
-      queryParams: { access_type: 'offline', prompt: 'consent' },
-    },
+// Abre el popup de Google para conceder permiso de lectura de Gmail.
+export function connectGmail() {
+  return new Promise((resolve, reject) => {
+    const c = client()
+    if (!c) { reject(new Error('Google todavía no cargó; esperá un segundo y probá de nuevo.')); return }
+    c.callback = (resp) => {
+      if (resp && resp.access_token) { saveGmailToken(resp.access_token); resolve(resp.access_token) }
+      else reject(new Error((resp && resp.error) || 'No se concedió el permiso.'))
+    }
+    c.requestAccessToken({ prompt: 'consent' })
   })
 }
 
 async function gapi(path, token) {
-  const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/' + path, {
-    headers: { Authorization: 'Bearer ' + token },
-  })
+  const r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/' + path, { headers: { Authorization: 'Bearer ' + token } })
   if (!r.ok) { const e = new Error('gmail ' + r.status); e.status = r.status; throw e }
   return r.json()
 }
 
-// base64url -> texto
 function b64(data) {
-  try { return decodeURIComponent(escape(atob(data.replace(/-/g, '+').replace(/_/g, '/')))) }
-  catch { return '' }
+  try { return decodeURIComponent(escape(atob(data.replace(/-/g, '+').replace(/_/g, '/')))) } catch { return '' }
 }
 function bodyText(payload) {
   if (!payload) return ''
@@ -56,8 +51,6 @@ function bodyText(payload) {
   if (payload.parts) return payload.parts.map(bodyText).join(' ')
   return ''
 }
-
-// Encuentra el mayor monto del texto (formato colombiano 1.234.567(,89))
 function parseAmount(text) {
   const re = /\$?\s?([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?)/g
   let m, best = 0

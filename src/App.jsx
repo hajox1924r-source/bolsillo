@@ -10,7 +10,7 @@ import {
   getGoals, createGoal, contributeGoal, deleteGoal,
   addManyTransactions,
 } from './lib/db.js'
-import { connectGmail, gmailToken, saveGmailToken, fetchGmailMovements, gmailProfile } from './lib/gmail.js'
+import { connectGmail, gmailToken, fetchGmailMovements, gmailProfile } from './lib/gmail.js'
 
 const NAV = [
   { id: 'inicio', label: 'Inicio', icon: 'home' },
@@ -34,33 +34,39 @@ function SyncSheet({ onClose, onImported }) {
   useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
   const close = () => { setOpen(false); setTimeout(onClose, 280) }
 
+  const load = async () => {
+    setStatus('loading')
+    try {
+      const prof = await gmailProfile()
+      setConnEmail(prof.emailAddress || '')
+      const imported = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
+      const res = await fetchGmailMovements()
+      setScanned(res.scanned)
+      const found = res.items.filter((m) => !imported.has(m.id))
+      if (!found.length) { setStatus('empty'); return }
+      setItems(found)
+      setSel(Object.fromEntries(found.map((f) => [f.id, true])))
+      setStatus('list')
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) setStatus('needauth')
+      else { setErr(e.message); setStatus('error') }
+    }
+  }
+
+  const handleConnect = async () => {
+    setErr('')
+    setStatus('loading')
+    try { await connectGmail(); await load() }
+    catch (e) { setErr(e.message); setStatus('needauth') }
+  }
+
   useEffect(() => {
     if (!gmailToken()) { setStatus('needauth'); return }
-    let alive = true
-    ;(async () => {
-      try {
-        const prof = await gmailProfile()
-        if (!alive) return
-        setConnEmail(prof.emailAddress || '')
-        const imported = new Set(JSON.parse(localStorage.getItem('bolsillo.gmailids') || '[]'))
-        const res = await fetchGmailMovements()
-        setScanned(res.scanned)
-        const found = res.items.filter((m) => !imported.has(m.id))
-        if (!alive) return
-        if (!found.length) { setStatus('empty'); return }
-        setItems(found)
-        setSel(Object.fromEntries(found.map((f) => [f.id, true])))
-        setStatus('list')
-      } catch (e) {
-        if (!alive) return
-        if (e.status === 401 || e.status === 403) setStatus('needauth')
-        else { setErr(e.message); setStatus('error') }
-      }
-    })()
-    return () => { alive = false }
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const toggle = (id) => setSel((s) => ({ ...s, [id]: !s[id] }))
+  const toggle = (id) => setSel((x) => ({ ...x, [id]: !x[id] }))
   const chosen = items.filter((i) => sel[i.id])
 
   const doImport = async () => {
@@ -87,14 +93,15 @@ function SyncSheet({ onClose, onImported }) {
         <div className="sheet-head"><span>Sincronizar con Gmail</span></div>
         {connEmail && <div className="conn-ok"><Icon name="check" size={13} /> Conectado como {connEmail}</div>}
 
-        {status === 'loading' && <p className="sync-msg">{connEmail ? 'Leyendo tus correos del banco…' : 'Verificando conexión…'}</p>}
+        {status === 'loading' && <p className="sync-msg">{connEmail ? 'Leyendo tus correos del banco…' : 'Conectando con Gmail…'}</p>}
 
         {status === 'needauth' && (
           <div className="sync-center">
             <div className="empty-ic"><Icon name="mail" size={30} /></div>
             <p className="sync-msg">Conectá tu Gmail para leer los correos de tu banco y crear los movimientos automáticamente.</p>
-            <button className="savebtn" onClick={connectGmail}>Conectar Gmail</button>
-            <p className="demo-note">Solo lectura. Google mostrará una pantalla de “app no verificada”: Avanzado → Continuar.</p>
+            {err && <p className="sync-msg" style={{ color: 'var(--expense)' }}>{err}</p>}
+            <button className="savebtn" onClick={handleConnect}>Conectar Gmail</button>
+            <p className="demo-note">Se abre un popup de Google. Si dice “app no verificada”: Avanzado → Continuar, y permití el acceso a Gmail.</p>
           </div>
         )}
 
@@ -104,14 +111,14 @@ function SyncSheet({ onClose, onImported }) {
             <p className="sync-msg">{scanned === 0
               ? 'No encontré correos de bancos en los últimos 45 días.'
               : `Revisé ${scanned} correos, pero no pude extraer el monto de ninguno (hay que afinar el lector para tu banco).`}</p>
-            <button className="savebtn ghost" onClick={connectGmail}>Reconectar Gmail</button>
+            <button className="savebtn ghost" onClick={handleConnect}>Reconectar Gmail</button>
           </div>
         )}
 
         {status === 'error' && (
           <div className="sync-center">
             <p className="sync-msg" style={{ color: 'var(--expense)' }}>No pude leer los correos.<br />{err}</p>
-            <button className="savebtn ghost" onClick={connectGmail}>Reconectar Gmail</button>
+            <button className="savebtn ghost" onClick={handleConnect}>Reconectar Gmail</button>
           </div>
         )}
 
@@ -168,10 +175,7 @@ export default function App() {
   useEffect(() => {
     if (!hasCloud) return
     supabase.auth.getSession().then(({ data }) => { setSession(data.session); setReady(true) })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s)
-      if (s?.provider_token) saveGmailToken(s.provider_token)
-    })
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => sub.subscription.unsubscribe()
   }, [])
 
