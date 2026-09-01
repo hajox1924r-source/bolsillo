@@ -1,6 +1,21 @@
 import Icon from './icons.jsx'
 import { money, catById, acctKind } from './data.js'
 
+// Vista tipo tarjeta: chip, número enmascarado, nombre y saldo. Se usa en Inicio y en el editor.
+export function CardVisual({ name, balance, kind }) {
+  const k = acctKind(kind)
+  return (
+    <div className={'cardvis ' + kind}>
+      <div className="cv-top"><span className="cv-chip" /><Icon name={k.icon} size={18} /></div>
+      <div className="cv-num">•••• •••• •••• ••••</div>
+      <div className="cv-bot">
+        <span className="cv-name">{name || 'Sin nombre'}</span>
+        <span className="cv-bal tnum">{balance < 0 ? '−' : ''}{money(balance)}</span>
+      </div>
+    </div>
+  )
+}
+
 const pct = (a, b) => Math.min(100, Math.round((a / b) * 100))
 const fmtDay = (iso) =>
   new Date(iso).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -32,19 +47,13 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount })
 
       <div className="sec-h"><h3>Cuentas</h3><button className="link-add" onClick={onAddAccount}>+ Cuenta</button></div>
       <div className="acards">
-        {accounts.map((a) => {
-          const k = acctKind(a.kind)
-          return (
-            <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
-              <div className={'aic ' + k.tint}><Icon name={k.icon} size={18} /></div>
-              <div className="an">{a.name}</div>
-              <div className="ab tnum">{a.balance < 0 ? '−' : ''}{money(a.balance)}</div>
-            </button>
-          )
-        })}
-        <button className="acard add" onClick={onAddAccount}>
-          <div className="aic"><Icon name="plus" size={18} /></div>
-          <div className="an">Agregar</div>
+        {accounts.map((a) => (
+          <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
+            <CardVisual name={a.name} balance={a.balance} kind={a.kind} />
+          </button>
+        ))}
+        <button className="acard-add" onClick={onAddAccount}>
+          <Icon name="plus" size={20} /><span>Agregar cuenta</span>
         </button>
       </div>
 

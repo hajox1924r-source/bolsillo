@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase, hasCloud } from './lib/supabase.js'
 import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
-import { Home, Budgets, Reports, Goals } from './screens.jsx'
+import { Home, Budgets, Reports, Goals, CardVisual } from './screens.jsx'
 import { categories, money, acctKinds, acctKind } from './data.js'
 import {
   getTransactions, addTransaction, updateTransaction, deleteTransaction,
@@ -691,6 +691,7 @@ function AccountSheet({ initial, onClose, onSave, onDelete }) {
             </button>
           )}
         </div>
+        <div className="cardvis-wrap"><CardVisual name={name} balance={balance} kind={kind} /></div>
         <div className="cat-lbl" style={{ marginTop: 0 }}>Tipo</div>
         <div className="kinds">
           {acctKinds.map((k) => (
