@@ -47,16 +47,19 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount })
       </div>
 
       <div className="sec-h"><h3>Cuentas</h3><button className="link-add" onClick={onAddAccount}>+ Cuenta</button></div>
-      <div className="acards">
-        {accounts.map((a) => (
-          <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
-            <CardVisual name={a.name} balance={a.balance} kind={a.kind} />
-          </button>
-        ))}
+      {accounts.length === 0 ? (
         <button className="acard-add" onClick={onAddAccount}>
           <Icon name="plus" size={20} /><span>Agregar cuenta</span>
         </button>
-      </div>
+      ) : (
+        <div className="wallet">
+          {accounts.map((a) => (
+            <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
+              <CardVisual name={a.name} balance={a.balance} kind={a.kind} />
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="sec-h"><h3>Movimientos</h3></div>
       {tx.length === 0 ? (
