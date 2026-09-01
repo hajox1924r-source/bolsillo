@@ -1,11 +1,12 @@
 import Icon from './icons.jsx'
-import { money, catById, acctKind } from './data.js'
+import { money, catById, acctKind, brandGrad } from './data.js'
 
 // Vista tipo tarjeta: chip, número enmascarado, nombre y saldo. Se usa en Inicio y en el editor.
 export function CardVisual({ name, balance, kind }) {
   const k = acctKind(kind)
+  const grad = brandGrad(name)
   return (
-    <div className={'cardvis ' + kind}>
+    <div className={'cardvis ' + kind} style={grad ? { background: grad } : undefined}>
       <div className="cv-top"><span className="cv-chip" /><Icon name={k.icon} size={18} /></div>
       <div className="cv-num">•••• •••• •••• ••••</div>
       <div className="cv-bot">
