@@ -3,7 +3,7 @@ import { supabase, hasCloud } from './supabase.js'
 // La UI usa {id, cat, name, amount, occurred_at}. En la nube se mapea a columnas.
 const fromRow = (r) => ({
   id: r.id, cat: r.category, name: r.description || r.category,
-  amount: Number(r.amount), occurred_at: r.occurred_at,
+  amount: Number(r.amount), occurred_at: r.occurred_at, account: r.account_id ?? null,
 })
 
 const KEY = 'bolsillo.tx'
@@ -17,28 +17,28 @@ export async function getTransactions() {
   return data.map(fromRow)
 }
 
-export async function addTransaction({ cat, name, amount }) {
+export async function addTransaction({ cat, name, amount, account }) {
   if (!hasCloud) {
-    const row = { id: Date.now(), cat, name, amount, occurred_at: new Date().toISOString() }
+    const row = { id: Date.now(), cat, name, amount, account: account || null, occurred_at: new Date().toISOString() }
     localStorage.setItem(KEY, JSON.stringify([row, ...local()]))
     return row
   }
   const { data: { user } } = await supabase.auth.getUser()
   const { data, error } = await supabase.from('transactions')
-    .insert({ user_id: user.id, category: cat, description: name, amount })
+    .insert({ user_id: user.id, category: cat, description: name, amount, account_id: account || null })
     .select().single()
   if (error) throw error
   return fromRow(data)
 }
 
-export async function updateTransaction(id, { cat, name, amount }) {
+export async function updateTransaction(id, { cat, name, amount, account }) {
   if (!hasCloud) {
-    const list = local().map((t) => (t.id === id ? { ...t, cat, name, amount } : t))
+    const list = local().map((t) => (t.id === id ? { ...t, cat, name, amount, account: account || null } : t))
     localStorage.setItem(KEY, JSON.stringify(list))
     return list.find((t) => t.id === id)
   }
   const { data, error } = await supabase.from('transactions')
-    .update({ category: cat, description: name, amount }).eq('id', id).select().single()
+    .update({ category: cat, description: name, amount, account_id: account || null }).eq('id', id).select().single()
   if (error) throw error
   return fromRow(data)
 }
@@ -149,4 +149,50 @@ export async function addManyTransactions(items) {
   const { data, error } = await supabase.from('transactions').insert(payload).select()
   if (error) throw error
   return data.map(fromRow)
+}
+
+// ---------- Cuentas ----------
+const AKEY = 'bolsillo.accounts'
+const localA = () => { try { return JSON.parse(localStorage.getItem(AKEY)) || [] } catch { return [] } }
+const fromA = (r) => ({ id: r.id, name: r.name, kind: r.kind, balance: Number(r.balance) })
+
+export async function getAccounts() {
+  if (!hasCloud) return localA()
+  const { data, error } = await supabase.from('accounts').select('*').order('created_at', { ascending: true })
+  if (error) throw error
+  return data.map(fromA)
+}
+
+export async function createAccount({ name, kind, balance }) {
+  if (!hasCloud) {
+    const row = { id: Date.now(), name, kind, balance }
+    localStorage.setItem(AKEY, JSON.stringify([...localA(), row]))
+    return row
+  }
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.from('accounts')
+    .insert({ user_id: user.id, name, kind, balance }).select().single()
+  if (error) throw error
+  return fromA(data)
+}
+
+export async function updateAccount(id, { name, kind, balance }) {
+  if (!hasCloud) {
+    const list = localA().map((a) => (a.id === id ? { ...a, name, kind, balance } : a))
+    localStorage.setItem(AKEY, JSON.stringify(list))
+    return list.find((a) => a.id === id)
+  }
+  const { data, error } = await supabase.from('accounts')
+    .update({ name, kind, balance }).eq('id', id).select().single()
+  if (error) throw error
+  return fromA(data)
+}
+
+export async function deleteAccount(id) {
+  if (!hasCloud) {
+    localStorage.setItem(AKEY, JSON.stringify(localA().filter((a) => a.id !== id)))
+    return
+  }
+  const { error } = await supabase.from('accounts').delete().eq('id', id)
+  if (error) throw error
 }

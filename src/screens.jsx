@@ -1,5 +1,5 @@
 import Icon from './icons.jsx'
-import { money, catById } from './data.js'
+import { money, catById, acctKind } from './data.js'
 
 const pct = (a, b) => Math.min(100, Math.round((a / b) * 100))
 const fmtDay = (iso) =>
@@ -11,22 +11,41 @@ const CAT_COLOR = {
   hogar: '#14634F', ocio: '#7C5CC2', ingreso: '#2E9E6B',
 }
 
-export function Home({ tx, onEdit }) {
+export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount }) {
   const ingresos = tx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const gastos = tx.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
-  const balance = ingresos + gastos
+  // El balance es la suma de lo que hay en cada cuenta (lo mantenés vos). Sin cuentas, cae al flujo.
+  const balance = accounts.length ? accounts.reduce((s, a) => s + a.balance, 0) : ingresos + gastos
   const days = [...new Set(tx.map((t) => fmtDay(t.occurred_at)))]
 
   return (
     <>
       <div className="balcard">
-        <div className="lbl">Balance</div>
+        <div className="lbl">Balance total</div>
         <div className="amount tnum">{balance < 0 ? '−' : ''}{money(balance)}</div>
         <div className="sub">{tx.length} movimiento{tx.length === 1 ? '' : 's'}</div>
         <div className="flowrow">
           <div className="flowchip"><div className="k">Ingresos</div><div className="v tnum">{money(ingresos)}</div></div>
           <div className="flowchip"><div className="k">Gastos</div><div className="v tnum">{money(gastos)}</div></div>
         </div>
+      </div>
+
+      <div className="sec-h"><h3>Cuentas</h3><button className="link-add" onClick={onAddAccount}>+ Cuenta</button></div>
+      <div className="acards">
+        {accounts.map((a) => {
+          const k = acctKind(a.kind)
+          return (
+            <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
+              <div className={'aic ' + k.tint}><Icon name={k.icon} size={18} /></div>
+              <div className="an">{a.name}</div>
+              <div className="ab tnum">{a.balance < 0 ? '−' : ''}{money(a.balance)}</div>
+            </button>
+          )
+        })}
+        <button className="acard add" onClick={onAddAccount}>
+          <div className="aic"><Icon name="plus" size={18} /></div>
+          <div className="an">Agregar</div>
+        </button>
       </div>
 
       <div className="sec-h"><h3>Movimientos</h3></div>

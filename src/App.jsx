@@ -3,12 +3,13 @@ import { supabase, hasCloud } from './lib/supabase.js'
 import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals } from './screens.jsx'
-import { categories, money } from './data.js'
+import { categories, money, acctKinds, acctKind } from './data.js'
 import {
   getTransactions, addTransaction, updateTransaction, deleteTransaction,
   getBudgets, upsertBudget, deleteBudget,
   getGoals, createGoal, contributeGoal, deleteGoal,
   addManyTransactions,
+  getAccounts, createAccount, updateAccount, deleteAccount,
 } from './lib/db.js'
 import { connectGmail, gmailToken, fetchGmailMovements, gmailProfile, tokenScopes } from './lib/gmail.js'
 
@@ -174,6 +175,8 @@ export default function App() {
   const [bsheet, setBsheet] = useState(null)    // presupuesto
   const [goals, setGoals] = useState([])
   const [gsheet, setGsheet] = useState(null)    // meta
+  const [accounts, setAccounts] = useState([])
+  const [asheet, setAsheet] = useState(null)    // cuenta
   const [syncOpen, setSyncOpen] = useState(false)
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
@@ -188,10 +191,11 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (hasCloud && !session) { setTx([]); setBudgets([]); setGoals([]); return }
+    if (hasCloud && !session) { setTx([]); setBudgets([]); setGoals([]); setAccounts([]); return }
     getTransactions().then(setTx).catch((e) => console.error('Error al cargar:', e.message))
     getBudgets().then(setBudgets).catch((e) => console.error('Error presupuestos:', e.message))
     getGoals().then(setGoals).catch((e) => console.error('Error metas:', e.message))
+    getAccounts().then(setAccounts).catch((e) => console.error('Error cuentas:', e.message))
   }, [session])
 
   const go = (id) => {
@@ -276,6 +280,24 @@ export default function App() {
     catch (e) { console.error('Error al borrar meta:', e.message) }
   }
 
+  const saveAccount = async (d) => {
+    setAsheet(null)
+    try {
+      if (d.id) {
+        const a = await updateAccount(d.id, d)
+        setAccounts((l) => l.map((x) => (x.id === a.id ? a : x)))
+      } else {
+        const a = await createAccount(d)
+        setAccounts((l) => [...l, a])
+      }
+    } catch (e) { console.error('Error cuenta:', e.message) }
+  }
+  const delAccount = async (id) => {
+    setAsheet(null)
+    try { await deleteAccount(id); setAccounts((l) => l.filter((a) => a.id !== id)) }
+    catch (e) { console.error('Error al borrar cuenta:', e.message) }
+  }
+
   const importMany = (added) => setTx((list) =>
     [...added, ...list].sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at)))
 
@@ -310,7 +332,7 @@ export default function App() {
       </div>
 
       <div className={'view' + (fading ? ' fading' : '')} ref={viewRef}>
-        {screen === 'inicio' && <Home tx={tx} onEdit={setSheet} />}
+        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAsheet} onAddAccount={() => setAsheet({})} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
         {screen === 'metas' && <Goals goals={goals} onEdit={setGsheet} />}
@@ -325,7 +347,7 @@ export default function App() {
         <Icon name="plus" size={26} />
       </button>
 
-      {sheet && <TxSheet initial={sheet} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
+      {sheet && <TxSheet initial={sheet} accounts={accounts} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
       {bsheet && (
         <BudgetSheet initial={bsheet} existing={budgets.map((b) => b.cat)}
           onClose={() => setBsheet(null)} onSave={saveBudget} onDelete={delBudget} />
@@ -335,6 +357,7 @@ export default function App() {
           onCreate={saveGoal} onContribute={contribute} onDelete={delGoal} />
       )}
       {syncOpen && <SyncSheet onClose={() => setSyncOpen(false)} onImported={importMany} />}
+      {asheet && <AccountSheet initial={asheet} onClose={() => setAsheet(null)} onSave={saveAccount} onDelete={delAccount} />}
     </div>
   )
 
@@ -378,11 +401,12 @@ const pressDigits = (setRaw) => (k) => {
   else setRaw((r) => (r.length < 9 ? (r + k).replace(/^0+/, '') : r))
 }
 
-function TxSheet({ initial, onClose, onSave, onDelete }) {
+function TxSheet({ initial, accounts = [], onClose, onSave, onDelete }) {
   const editing = !!initial?.id
   const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
   const [raw, setRaw] = useState(editing ? String(Math.abs(initial.amount)) : '')
   const [cat, setCat] = useState(initial?.cat || 'mercado')
+  const [account, setAccount] = useState(initial?.account || accounts[0]?.id || '')
   const [open, setOpen] = useState(false)
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
@@ -393,7 +417,7 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
   const save = () => {
     if (!amount) return
     const c = opts.find((o) => o.id === cat) || opts[0]
-    onSave({ id: initial?.id, cat: c.id, name: c.label, amount: type === 'gasto' ? -amount : amount })
+    onSave({ id: initial?.id, cat: c.id, name: c.label, amount: type === 'gasto' ? -amount : amount, account: account || null })
   }
 
   return (
@@ -429,6 +453,21 @@ function TxSheet({ initial, onClose, onSave, onDelete }) {
             </button>
           ))}
         </div>
+        {accounts.length > 0 && (
+          <>
+            <div className="cat-lbl">Cuenta</div>
+            <div className="acct-pick">
+              {accounts.map((a) => {
+                const k = acctKind(a.kind)
+                return (
+                  <button type="button" key={a.id} className={'apill' + (account === a.id ? ' sel' : '')} onClick={() => setAccount(a.id)}>
+                    <span className={'apic ' + k.tint}><Icon name={k.icon} size={14} /></span>{a.name}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
         <Keypad onKey={pressDigits(setRaw)} />
         <button className="savebtn" disabled={!amount} onClick={save}>
           {editing ? 'Guardar cambios' : 'Guardar movimiento'}
@@ -622,6 +661,53 @@ function GoalSheet({ initial, onClose, onCreate, onContribute, onDelete }) {
             <button className="savebtn" disabled={!name || !amount} onClick={submit}>Crear meta</button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+function AccountSheet({ initial, onClose, onSave, onDelete }) {
+  const editing = !!initial?.id
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState(initial?.name || '')
+  const [kind, setKind] = useState(initial?.kind || 'billetera')
+  const [raw, setRaw] = useState(editing ? String(Math.round(initial.balance)) : '')
+  const balance = Number(raw || 0)
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+  const save = () => { if (name.trim()) onSave({ id: initial?.id, name: name.trim(), kind, balance }) }
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Cuenta">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head">
+          <span>{editing ? 'Editar cuenta' : 'Nueva cuenta'}</span>
+          {editing && (
+            <button className="del-btn" onClick={() => onDelete(initial.id)} aria-label="Borrar">
+              <Icon name="trash" size={16} /> Borrar
+            </button>
+          )}
+        </div>
+        <div className="cat-lbl" style={{ marginTop: 0 }}>Tipo</div>
+        <div className="emoji-row">
+          {acctKinds.map((k) => (
+            <button key={k.id} className={'emoji-pick' + (kind === k.id ? ' sel' : '')} onClick={() => setKind(k.id)} aria-label={k.label}>
+              <Icon name={k.icon} size={22} />
+            </button>
+          ))}
+        </div>
+        <div className="cat-lbl">Nombre</div>
+        <input className="text-in" value={name} maxLength={24}
+          onChange={(e) => setName(e.target.value)} placeholder="Ej: Nequi, Daviplata, Bancolombia" />
+        <div className="cat-lbl">Saldo actual</div>
+        <div className="amount-in"><span className="cur">$</span><span className="num tnum">{balance ? balance.toLocaleString('es-CO') : '0'}</span></div>
+        <Keypad onKey={pressDigits(setRaw)} />
+        <button className="savebtn" disabled={!name.trim()} onClick={save}>
+          {editing ? 'Guardar cambios' : 'Crear cuenta'}
+        </button>
       </div>
     </div>
   )

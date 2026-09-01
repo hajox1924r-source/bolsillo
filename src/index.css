@@ -427,3 +427,26 @@ button.goal:active{transform:scale(.99)}
 
 /* Badge de conexión Gmail */
 .conn-ok{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--brand);background:var(--brand-soft);padding:5px 11px;border-radius:99px;margin-bottom:12px}
+
+/* ---------- Cuentas ---------- */
+.sec-h .link-add{font-size:12.5px;color:var(--brand);font-weight:700;background:none;border:0;cursor:pointer}
+.acards{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+.acards::-webkit-scrollbar{display:none}
+.acard{flex:0 0 auto;width:150px;text-align:left;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:16px;padding:13px 14px;cursor:pointer;display:flex;flex-direction:column;gap:9px;
+  transition:transform .14s ease, box-shadow .14s ease}
+.acard:active{transform:scale(.97)}
+.acard .aic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center}
+.acard .an{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acard .ab{font-family:"Bricolage Grotesque",serif;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.acard.add{align-items:center;justify-content:center;color:var(--ink-3);border-style:dashed;background:none}
+.acard.add .aic{background:var(--surface-2)}
+.acard.add .an{color:var(--ink-3)}
+
+/* Selector de cuenta en el movimiento */
+.acct-pick{display:flex;gap:8px;flex-wrap:wrap}
+.apill{display:inline-flex;align-items:center;gap:7px;padding:8px 13px 8px 9px;border-radius:999px;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .14s ease, color .14s ease}
+.apill.sel{border-color:var(--brand);color:var(--ink)}
+.apill .apic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center}
