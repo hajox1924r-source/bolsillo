@@ -3,7 +3,7 @@ import { supabase, hasCloud } from './lib/supabase.js'
 import Auth from './Auth.jsx'
 import Icon from './icons.jsx'
 import { Home, Budgets, Reports, Goals, CardVisual } from './screens.jsx'
-import { categories, money, acctKinds, acctKind } from './data.js'
+import { categories, money, acctKinds, acctKind, catById } from './data.js'
 import {
   getTransactions, addTransaction, updateTransaction, deleteTransaction,
   getBudgets, upsertBudget, deleteBudget,
@@ -176,7 +176,8 @@ export default function App() {
   const [goals, setGoals] = useState([])
   const [gsheet, setGsheet] = useState(null)    // meta
   const [accounts, setAccounts] = useState([])
-  const [asheet, setAsheet] = useState(null)    // cuenta
+  const [asheet, setAsheet] = useState(null)    // cuenta (crear/editar)
+  const [adetail, setAdetail] = useState(null)  // cuenta (ver detalle)
   const [syncOpen, setSyncOpen] = useState(false)
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
@@ -224,24 +225,43 @@ export default function App() {
     }, 300)
   }
 
+  // Ajusta el saldo de una cuenta y lo persiste. delta con signo (gasto negativo, ingreso positivo).
+  const applyBalance = async (accountId, delta) => {
+    if (!accountId || !delta) return
+    const acc = accounts.find((a) => a.id === accountId)
+    if (!acc) return
+    const nb = acc.balance + delta
+    setAccounts((l) => l.map((a) => (a.id === accountId ? { ...a, balance: nb } : a)))
+    try { await updateAccount(accountId, { name: acc.name, kind: acc.kind, balance: nb }) }
+    catch (e) { console.error('Error saldo:', e.message) }
+  }
+
   const saveTx = async (data) => {
     setSheet(null)
     try {
       if (data.id) {
+        const old = tx.find((t) => t.id === data.id)
         const u = await updateTransaction(data.id, data)
         setTx((list) => list.map((t) => (t.id === u.id ? u : t)))
+        if (old) {
+          if (old.account === u.account) await applyBalance(u.account, u.amount - old.amount)
+          else { await applyBalance(old.account, -old.amount); await applyBalance(u.account, u.amount) }
+        }
       } else {
         const n = await addTransaction(data)
         setTx((list) => [n, ...list])
+        await applyBalance(n.account, n.amount)
       }
     } catch (e) { console.error('Error al guardar:', e.message) }
   }
 
   const delTx = async (id) => {
     setSheet(null)
+    const old = tx.find((t) => t.id === id)
     try {
       await deleteTransaction(id)
       setTx((list) => list.filter((t) => t.id !== id))
+      if (old) await applyBalance(old.account, -old.amount)
     } catch (e) { console.error('Error al borrar:', e.message) }
   }
 
@@ -332,7 +352,7 @@ export default function App() {
       </div>
 
       <div className={'view' + (fading ? ' fading' : '')} ref={viewRef}>
-        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAsheet} onAddAccount={() => setAsheet({})} />}
+        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAdetail} onAddAccount={() => setAsheet({})} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
         {screen === 'metas' && <Goals goals={goals} onEdit={setGsheet} />}
@@ -358,6 +378,12 @@ export default function App() {
       )}
       {syncOpen && <SyncSheet onClose={() => setSyncOpen(false)} onImported={importMany} />}
       {asheet && <AccountSheet initial={asheet} onClose={() => setAsheet(null)} onSave={saveAccount} onDelete={delAccount} />}
+      {adetail && (
+        <AccountDetail account={accounts.find((a) => a.id === adetail.id) || adetail} tx={tx}
+          onClose={() => setAdetail(null)}
+          onEditAccount={(a) => { setAdetail(null); setAsheet(a) }}
+          onEditTx={(t) => { setAdetail(null); setSheet(t) }} />
+      )}
     </div>
   )
 
@@ -710,6 +736,58 @@ function AccountSheet({ initial, onClose, onSave, onDelete }) {
         <button className="savebtn" disabled={!name.trim()} onClick={save}>
           {editing ? 'Guardar cambios' : 'Crear cuenta'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+function AccountDetail({ account, tx, onClose, onEditAccount, onEditTx }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+
+  const mine = tx.filter((t) => t.account === account.id)
+  const ingresos = mine.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
+  const gastos = mine.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Detalle de cuenta">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head">
+          <span>Detalle de cuenta</span>
+          <button className="link-add" onClick={() => onEditAccount(account)}>Editar</button>
+        </div>
+        <div className="cardvis-wrap"><CardVisual name={account.name} balance={account.balance} kind={account.kind} /></div>
+        <div className="acc-sum">
+          <div><span>Ingresos</span><b className="in">{money(ingresos)}</b></div>
+          <div><span>Gastos</span><b>{money(gastos)}</b></div>
+        </div>
+        <div className="cat-lbl">Movimientos de esta cuenta</div>
+        {mine.length === 0 ? (
+          <p style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '6px 0 10px' }}>
+            Todavía no hay movimientos con esta cuenta.
+          </p>
+        ) : (
+          <div className="txlist">
+            {mine.map((t) => {
+              const c = catById(t.cat)
+              return (
+                <button className="tx" key={t.id} onClick={() => onEditTx(t)}>
+                  <div className={'ic ' + c.tint}><Icon name={c.icon} size={19} /></div>
+                  <div className="mid">
+                    <div className="nm">{t.name}</div>
+                    <div className="mt">{c.label}</div>
+                  </div>
+                  <div className={'amt tnum ' + (t.amount > 0 ? 'in' : '')}>
+                    {t.amount > 0 ? '+' : '−'}{money(t.amount)}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

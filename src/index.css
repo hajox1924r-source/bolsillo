@@ -468,3 +468,11 @@ button.goal:active{transform:scale(.99)}
 .kind:active .ki{transform:scale(.94)}
 .kind .kl{font-size:10.5px;color:var(--ink-2);font-weight:600}
 .kind.sel .kl{color:var(--brand);font-weight:700}
+
+/* Resumen dentro del detalle de cuenta */
+.acc-sum{display:flex;gap:10px;margin:14px 0 4px}
+.acc-sum>div{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:11px 13px;
+  display:flex;flex-direction:column;gap:3px}
+.acc-sum span{font-size:11.5px;color:var(--ink-3);font-weight:600}
+.acc-sum b{font-family:"Bricolage Grotesque",serif;font-size:17px;font-weight:700;color:var(--expense)}
+.acc-sum b.in{color:var(--income)}
