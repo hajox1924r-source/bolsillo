@@ -450,3 +450,13 @@ button.goal:active{transform:scale(.99)}
   transition:border-color .14s ease, color .14s ease}
 .apill.sel{border-color:var(--brand);color:var(--ink)}
 .apill .apic{width:24px;height:24px;border-radius:8px;display:grid;place-items:center}
+
+/* Selector de tipo de cuenta, con nombre debajo */
+.kinds{display:flex;gap:9px}
+.kind{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;cursor:pointer;padding:0}
+.kind .ki{width:100%;height:46px;border-radius:13px;display:grid;place-items:center;border:2px solid transparent;
+  transition:border-color .14s ease, transform .14s ease}
+.kind.sel .ki{border-color:var(--brand)}
+.kind:active .ki{transform:scale(.94)}
+.kind .kl{font-size:10.5px;color:var(--ink-2);font-weight:600}
+.kind.sel .kl{color:var(--brand);font-weight:700}

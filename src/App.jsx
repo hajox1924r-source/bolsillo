@@ -692,10 +692,11 @@ function AccountSheet({ initial, onClose, onSave, onDelete }) {
           )}
         </div>
         <div className="cat-lbl" style={{ marginTop: 0 }}>Tipo</div>
-        <div className="emoji-row">
+        <div className="kinds">
           {acctKinds.map((k) => (
-            <button key={k.id} className={'emoji-pick' + (kind === k.id ? ' sel' : '')} onClick={() => setKind(k.id)} aria-label={k.label}>
-              <Icon name={k.icon} size={22} />
+            <button type="button" key={k.id} className={'kind' + (kind === k.id ? ' sel' : '')} onClick={() => setKind(k.id)}>
+              <span className={'ki ' + k.tint}><Icon name={k.icon} size={20} /></span>
+              <span className="kl">{k.label}</span>
             </button>
           ))}
         </div>
