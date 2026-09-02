@@ -1060,8 +1060,8 @@ function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, on
           <div className="prof-av-wrap">
             <button type="button" className="prof-av" onClick={avatarTap} aria-label="Foto de perfil">
               {avatar ? <img src={avatar} alt="Perfil" /> : <Icon name="user" size={34} />}
-              <span className="prof-cam"><Icon name="camera" size={13} /></span>
             </button>
+            <span className="prof-cam"><Icon name="camera" size={13} /></span>
             {avMenu && (
               <div className="av-menu">
                 <button type="button" onClick={() => { setAvMenu(false); setViewing(true) }}>Ver foto</button>
