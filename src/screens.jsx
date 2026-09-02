@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import Icon from './icons.jsx'
 import { money, catById, acctKind, brandGrad } from './data.js'
 
@@ -52,6 +53,9 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, r
   const days = [...new Set(tx.map((t) => fmtDay(t.occurred_at)))]
 
   const mesActual = new Date().toLocaleDateString('es-CO', { month: 'long' })
+  const [entered, setEntered] = useState(false)
+  useEffect(() => { const id = requestAnimationFrame(() => setEntered(true)); return () => cancelAnimationFrame(id) }, [])
+  const inCls = entered ? ' on' : ''
   return (
     <>
       {remind && (
@@ -65,7 +69,7 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, r
           <button className="remind-x" onClick={onDismissRemind} aria-label="Descartar"><Icon name="x" size={13} /></button>
         </div>
       )}
-      <div className="balcard">
+      <div className={'balcard hin b0' + inCls}>
         <div className="lbl">Balance total</div>
         <div className="amount tnum">{balance < 0 ? '−' : ''}{money(balance)}</div>
         <div className="sub">{tx.length} movimiento{tx.length === 1 ? '' : 's'}</div>
@@ -77,11 +81,11 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, r
 
       <div className="sec-h"><h3>Cuentas</h3><button className="link-add" onClick={onAddAccount}>+ Cuenta</button></div>
       {accounts.length === 0 ? (
-        <button className="acard-add" onClick={onAddAccount}>
+        <button className={'acard-add hin b1' + inCls} onClick={onAddAccount}>
           <Icon name="plus" size={20} /><span>Agregar cuenta</span>
         </button>
       ) : (
-        <div className="wallet">
+        <div className={'wallet hin b1' + inCls}>
           {accounts.map((a) => (
             <button className={'acard' + (removing && removing.has(a.id) ? ' removing' : '')} key={a.id} onClick={() => onEditAccount(a)}>
               <CardVisual name={a.name} balance={a.balance} kind={a.kind} />

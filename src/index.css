@@ -578,3 +578,8 @@ button.goal:active{transform:scale(.99)}
   padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:transform .12s ease}
 .name-save:active{transform:scale(.93)}
 .name-ok{flex:0 0 auto;color:var(--income);display:grid;place-items:center}
+
+/* Animación de entrada del inicio (transiciones, seguras con "reducir movimiento") */
+.hin{opacity:0;transform:translateY(18px);transition:opacity .45s ease, transform .45s ease}
+.hin.on{opacity:1;transform:none}
+.hin.b1.on{transition-delay:.09s}

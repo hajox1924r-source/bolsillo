@@ -386,6 +386,11 @@ export default function App() {
   const importMany = (added) => setTx((list) =>
     [...added, ...list].sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at)))
 
+  // La cuenta más usada se deduce de los movimientos; sirve de preselección si no fijaste una por defecto.
+  const mostUsedAccount = (() => {
+    const c = {}; tx.forEach((t) => { if (t.account) c[t.account] = (c[t.account] || 0) + 1 })
+    return Object.keys(c).sort((a, b) => c[b] - c[a])[0] || ''
+  })()
   const meta = hasCloud ? (session?.user?.user_metadata || {}) : localProf
   const avatar = avatarUrl
   const nombre = (meta.full_name || meta.name || '').split(' ')[0] || session?.user?.email?.split('@')[0] || ''
@@ -427,7 +432,7 @@ export default function App() {
         <Icon name="plus" size={26} />
       </button>
 
-      {sheet && <TxSheet initial={sheet} accounts={accounts} defaultAccount={defAccount} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
+      {sheet && <TxSheet initial={sheet} accounts={accounts} defaultAccount={defAccount} mostUsed={mostUsedAccount} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
       {bsheet && (
         <BudgetSheet initial={bsheet} existing={budgets.map((b) => b.cat)}
           onClose={() => setBsheet(null)} onSave={saveBudget} onDelete={delBudget} />
@@ -498,12 +503,12 @@ const pressDigits = (setRaw) => (k) => {
   else setRaw((r) => (r.length < 9 ? (r + k).replace(/^0+/, '') : r))
 }
 
-function TxSheet({ initial, accounts = [], defaultAccount = '', onClose, onSave, onDelete }) {
+function TxSheet({ initial, accounts = [], defaultAccount = '', mostUsed = '', onClose, onSave, onDelete }) {
   const editing = !!initial?.id
   const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
   const [raw, setRaw] = useState(editing ? String(Math.abs(initial.amount)) : '')
   const [cat, setCat] = useState(initial?.cat || 'mercado')
-  const [account, setAccount] = useState(initial?.account || defaultAccount || accounts[0]?.id || '')
+  const [account, setAccount] = useState(initial?.account || defaultAccount || mostUsed || accounts[0]?.id || '')
   const [open, setOpen] = useState(false)
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
