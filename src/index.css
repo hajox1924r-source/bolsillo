@@ -436,8 +436,7 @@ button.goal:active{transform:scale(.99)}
   transition:transform .18s ease}
 .wallet .acard:not(:first-child){margin-top:-76px}
 .wallet .acard{border-radius:16px}
-.wallet .acard:active,.wallet .acard:hover{transform:translateY(-8px);z-index:20}
-.wallet .acard:hover~.acard{transform:translateY(4px)}
+.wallet .acard:active{transform:translateY(-6px);z-index:20}
 .acard-add{width:100%;border:1.5px dashed var(--line);border-radius:16px;background:none;color:var(--ink-3);
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;padding:16px}
 
@@ -484,3 +483,22 @@ button.goal:active{transform:scale(.99)}
 .acc-sum span{font-size:11.5px;color:var(--ink-3);font-weight:600}
 .acc-sum b{font-family:"Bricolage Grotesque",serif;font-size:17px;font-weight:700;color:var(--expense)}
 .acc-sum b.in{color:var(--income)}
+
+/* ---------- Detalle de cuenta: diseño y entrada ---------- */
+.edit-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);
+  background:var(--surface-2);color:var(--ink);font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:transform .14s ease, background .14s ease, border-color .14s ease, color .14s ease}
+.edit-btn:hover{border-color:var(--brand);color:var(--brand)}
+.edit-btn:active{transform:scale(.92)}
+
+.acc-sum span{display:inline-flex;align-items:center;gap:5px;color:var(--ink-3)}
+.acc-sum div:first-child span svg{color:var(--income)}
+.acc-sum div:last-child span svg{color:var(--expense)}
+
+/* Entrada escalonada de la vista (transiciones, seguras con "reducir movimiento") */
+.sheet.detail .ani{opacity:0;transform:translateY(14px);transition:opacity .4s ease, transform .4s ease}
+.sheet.detail.open .ani{opacity:1;transform:none}
+.sheet.detail.open .a1{transition-delay:.04s}
+.sheet.detail.open .a2{transition-delay:.12s}
+.sheet.detail.open .a3{transition-delay:.20s}
+.sheet.detail.open .a4{transition-delay:.28s}

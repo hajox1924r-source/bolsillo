@@ -769,25 +769,26 @@ function AccountDetail({ account, tx, onClose, onEditAccount, onEditTx }) {
 
   return (
     <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
-      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Detalle de cuenta">
+      <div className={'sheet detail' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Detalle de cuenta">
         <div className="grab" />
         <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
         <div className="sheet-head">
           <span>Detalle de cuenta</span>
-          <button className="link-add" onClick={() => onEditAccount(account)}>Editar</button>
+          <button className="edit-btn" onClick={() => onEditAccount(account)}><Icon name="pencil" size={14} /> Editar</button>
         </div>
-        <div className="cardvis-wrap"><CardVisual name={account.name} balance={account.balance} kind={account.kind} /></div>
-        <div className="acc-sum">
-          <div><span>Ingresos</span><b className="in">{money(ingresos)}</b></div>
-          <div><span>Gastos</span><b>{money(gastos)}</b></div>
+        <div className="cardvis-wrap ani a1"><CardVisual name={account.name} balance={account.balance} kind={account.kind} /></div>
+        <div className="acc-sum ani a2">
+          <div><span><Icon name="down" size={13} /> Ingresos</span><b className="in">{money(ingresos)}</b></div>
+          <div><span><Icon name="up" size={13} /> Gastos</span><b>{money(gastos)}</b></div>
         </div>
-        <div className="cat-lbl">Movimientos de esta cuenta</div>
+        <div className="cat-lbl ani a3">Movimientos de esta cuenta</div>
         {mine.length === 0 ? (
-          <p style={{ color: 'var(--ink-3)', fontSize: 13, textAlign: 'center', padding: '6px 0 10px' }}>
-            Todavía no hay movimientos con esta cuenta.
-          </p>
+          <div className="ani a4" style={{ textAlign: 'center', padding: '10px 0 12px' }}>
+            <div className="empty-ic" style={{ margin: '0 auto 10px' }}><Icon name="clock" size={26} /></div>
+            <p style={{ color: 'var(--ink-3)', fontSize: 13 }}>Todavía no hay movimientos con esta cuenta.</p>
+          </div>
         ) : (
-          <div className="txlist">
+          <div className="txlist ani a4">
             {mine.map((t) => {
               const c = catById(t.cat)
               return (
