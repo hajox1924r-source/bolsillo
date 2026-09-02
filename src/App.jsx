@@ -201,6 +201,7 @@ export default function App() {
   const [accounts, setAccounts] = useState([])
   const [asheet, setAsheet] = useState(null)    // cuenta (crear/editar)
   const [adetail, setAdetail] = useState(null)  // cuenta (ver detalle)
+  const [removing, setRemoving] = useState(() => new Set())  // cuentas saliendo (animación)
   const [profileOpen, setProfileOpen] = useState(false)
   const [locked, setLocked] = useState(() => !!getPin())
   const [localProf, setLocalProf] = useState(() => { try { return JSON.parse(localStorage.getItem('bolsillo.profile') || '{}') } catch { return {} } })
@@ -353,10 +354,14 @@ export default function App() {
       }
     } catch (e) { console.error('Error cuenta:', e.message) }
   }
-  const delAccount = async (id) => {
+  const delAccount = (id) => {
     setAsheet(null)
-    try { await deleteAccount(id); setAccounts((l) => l.filter((a) => a.id !== id)) }
-    catch (e) { console.error('Error al borrar cuenta:', e.message) }
+    deleteAccount(id).catch((e) => console.error('Error al borrar cuenta:', e.message)) // en segundo plano
+    setRemoving((r) => new Set(r).add(id))                                              // dispara la salida
+    setTimeout(() => {
+      setAccounts((l) => l.filter((a) => a.id !== id))
+      setRemoving((r) => { const n = new Set(r); n.delete(id); return n })
+    }, 330)
   }
 
   const updateProfile = async (patch) => {
@@ -406,7 +411,7 @@ export default function App() {
       </div>
 
       <div className={'view' + (fading ? ' fading' : '')} ref={viewRef}>
-        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAdetail} onAddAccount={() => setAsheet({})}
+        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAdetail} onAddAccount={() => setAsheet({})} removing={removing}
           remind={accounts.length > 0 && curMonth() !== stmtMonth} onImportStatement={() => setStmtOpen(true)} onDismissRemind={markStmtMonth} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
@@ -1029,6 +1034,9 @@ function Dots({ n }) {
 function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, onToggleTheme, onLogout, onSaveProfile, defAccount, onDefAccount, onEnablePin, onDisablePin, onClose }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState(meta.full_name || meta.name || '')
+  const [justSaved, setJustSaved] = useState(false)
+  const dirty = name.trim() && name.trim() !== (meta.full_name || meta.name || '')
+  const saveName = () => { onSaveProfile({ full_name: name.trim() }); setJustSaved(true); setTimeout(() => setJustSaved(false), 1400) }
   const [avatar, setAvatar] = useState(avatar0 || '')
   const [pinSet, setPinSet] = useState(hasPin)
   const [pinMode, setPinMode] = useState(false)
@@ -1072,9 +1080,12 @@ function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, on
             <input ref={fileRef} type="file" accept="image/*" onChange={pickPhoto} style={{ display: 'none' }} />
           </div>
           <div className="prof-id">
-            <input className="text-in prof-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
-              onBlur={() => name.trim() && name !== (meta.full_name || meta.name) && onSaveProfile({ full_name: name.trim() })}
-              placeholder="Tu nombre" />
+            <div className="name-row">
+              <input className="text-in prof-name" value={name} maxLength={40}
+                onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" />
+              {dirty && <button type="button" className="name-save" onClick={saveName}>Guardar</button>}
+              {justSaved && <span className="name-ok"><Icon name="check" size={15} /></span>}
+            </div>
             {email && <div className="prof-mail">{email}</div>}
           </div>
         </div>

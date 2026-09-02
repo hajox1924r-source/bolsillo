@@ -44,7 +44,7 @@ const CAT_COLOR = {
   hogar: '#14634F', ocio: '#7C5CC2', ingreso: '#2E9E6B',
 }
 
-export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, remind, onImportStatement, onDismissRemind }) {
+export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, removing, onImportStatement, onDismissRemind, remind }) {
   const ingresos = tx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const gastos = tx.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
   // El balance es la suma de lo que hay en cada cuenta (lo mantenés vos). Sin cuentas, cae al flujo.
@@ -83,7 +83,7 @@ export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, r
       ) : (
         <div className="wallet">
           {accounts.map((a) => (
-            <button className="acard" key={a.id} onClick={() => onEditAccount(a)}>
+            <button className={'acard' + (removing && removing.has(a.id) ? ' removing' : '')} key={a.id} onClick={() => onEditAccount(a)}>
               <CardVisual name={a.name} balance={a.balance} kind={a.kind} />
             </button>
           ))}

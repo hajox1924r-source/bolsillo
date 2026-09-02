@@ -433,7 +433,8 @@ button.goal:active{transform:scale(.99)}
 /* Billetera: tarjetas apiladas, asomando una tras otra */
 .wallet{display:flex;flex-direction:column;padding:2px 2px 6px}
 .wallet .acard{width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative;
-  transition:transform .18s ease}
+  transition:transform .22s ease, opacity .3s ease}
+.wallet .acard.removing{opacity:0;transform:translateX(60px) scale(.88);pointer-events:none}
 .wallet .acard:not(:first-child){margin-top:-94px}
 .wallet .acard{border-radius:16px}
 .wallet .acard:hover{transform:translateY(-6px);z-index:20}
@@ -569,3 +570,11 @@ button.goal:active{transform:scale(.99)}
 .av-menu button.danger{color:var(--expense);border-top:1px solid var(--line)}
 .av-view{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:24px;cursor:zoom-out}
 .av-view img{max-width:88%;max-height:78%;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+
+/* Guardar nombre en perfil */
+.name-row{display:flex;align-items:center;gap:8px}
+.name-row .prof-name{flex:1;min-width:0}
+.name-save{flex:0 0 auto;background:var(--brand);color:var(--on-brand);border:0;border-radius:10px;
+  padding:9px 12px;font-size:12.5px;font-weight:700;cursor:pointer;transition:transform .12s ease}
+.name-save:active{transform:scale(.93)}
+.name-ok{flex:0 0 auto;color:var(--income);display:grid;place-items:center}
