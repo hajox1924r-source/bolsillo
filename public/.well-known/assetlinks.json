@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.bolsillo.finanzas",
+    "sha256_cert_fingerprints": ["5C:14:84:22:98:49:DE:05:F8:CE:34:4C:66:AA:5A:3F:A3:93:BA:48:4A:A6:7B:8C:B9:E4:73:B3:03:43:A3:06"]
+  }
+}]
