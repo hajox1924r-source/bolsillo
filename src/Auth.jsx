@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase.js'
 import Icon from './icons.jsx'
+
+const GOOGLE_CLIENT_ID = '647546328865-pni44bk1r0mqeqsv24f5bhfpce1b66bp.apps.googleusercontent.com'
 
 const traducir = (m) =>
   /invalid login/i.test(m) ? 'Correo o contraseña incorrectos.'
@@ -27,6 +29,41 @@ export default function Auth() {
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const [switching, setSwitching] = useState(false)
+  const gbtnRef = useRef(null)
+  const [gisReady, setGisReady] = useState(false)
+
+  // Login nativo con Google (One Tap): la cuenta se elige dentro de la app,
+  // sin abrir el navegador ni mostrar la URL de Supabase.
+  useEffect(() => {
+    let cancelled = false, tries = 0
+    const setup = async () => {
+      if (!window.google?.accounts?.id || !gbtnRef.current) return false
+      const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))))
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(nonce))
+      const hashed = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+      if (cancelled) return true
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          nonce: hashed,
+          use_fedcm_for_prompt: true,
+          callback: async ({ credential }) => {
+            setBusy(true); setMsg(null)
+            const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: credential, nonce })
+            if (error) setMsg({ type: 'err', text: traducir(error.message) })
+            setBusy(false)
+          },
+        })
+        gbtnRef.current.innerHTML = ''
+        window.google.accounts.id.renderButton(gbtnRef.current,
+          { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', width: 300 })
+        setGisReady(true)
+      } catch { return false }
+      return true
+    }
+    const iv = setInterval(async () => { tries++; if (await setup() || tries > 25) clearInterval(iv) }, 200)
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [])
 
   const toggleMode = () => {
     setMsg(null); setPass2('')
@@ -70,9 +107,12 @@ export default function Auth() {
       <h1 className="auth-title">Bolsillo</h1>
       <p className={'auth-sub ' + sw}>{mode === 'in' ? 'Entrá a tu cuenta' : 'Creá tu cuenta'}</p>
 
-      <button type="button" className="gbtn" onClick={google}>
-        <GoogleIcon /> Continuar con Google
-      </button>
+      <div ref={gbtnRef} className="gbtn-wrap" />
+      {!gisReady && (
+        <button type="button" className="gbtn" onClick={google}>
+          <GoogleIcon /> Continuar con Google
+        </button>
+      )}
       <div className="divider">o</div>
 
       <form className="auth-form" onSubmit={submit}>

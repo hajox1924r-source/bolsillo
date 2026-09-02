@@ -583,3 +583,6 @@ button.goal:active{transform:scale(.99)}
 .hin{opacity:0;transform:translateY(18px);transition:opacity .45s ease, transform .45s ease}
 .hin.on{opacity:1;transform:none}
 .hin.b1.on{transition-delay:.09s}
+
+/* Botón nativo de Google (One Tap) */
+.gbtn-wrap{display:flex;justify-content:center;min-height:44px;margin-bottom:2px}
