@@ -435,7 +435,7 @@ button.goal:active{transform:scale(.99)}
 .wallet .acard{width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative;
   transition:transform .22s ease, opacity .3s ease}
 .wallet .acard.removing{opacity:0;transform:translateX(60px) scale(.88);pointer-events:none}
-.wallet .acard:not(:first-child){margin-top:-94px}
+.wallet .acard:not(:first-child){margin-top:-134px}
 .wallet .acard{border-radius:16px}
 .wallet .acard:hover{transform:translateY(-6px);z-index:20}
 .wallet .acard:active{transform:translateY(-3px) scale(.995);z-index:20}
@@ -443,7 +443,7 @@ button.goal:active{transform:scale(.99)}
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;padding:16px}
 
 /* Vista tipo tarjeta */
-.cardvis{position:relative;overflow:hidden;isolation:isolate;border-radius:16px;padding:15px 16px;color:#fff;min-height:138px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:space-between;
+.cardvis{position:relative;overflow:hidden;isolation:isolate;border-radius:16px;padding:15px 16px;color:#fff;min-height:196px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:space-between;
   background:linear-gradient(135deg,#7C5CC2,#4A2E8F);box-shadow:0 -7px 18px -8px rgba(0,0,0,.55), 0 12px 26px -12px rgba(0,0,0,.55);text-align:left}
 .cardvis.tarjeta{background:linear-gradient(135deg,#334A66,#141F30)}
 .cv-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;color:rgba(255,255,255,.85)}
