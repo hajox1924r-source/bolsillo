@@ -20,6 +20,29 @@ const NAV = [
   { id: 'metas', label: 'Metas', icon: 'target' },
 ]
 
+// --- Perfil y PIN (utilidades) ---
+const PINKEY = 'bolsillo.pin'
+const hashPin = (p) => { let h = 5381; for (const c of p) h = ((h * 33) ^ c.charCodeAt(0)) >>> 0; return String(h) }
+const getPin = () => { try { return localStorage.getItem(PINKEY) || '' } catch { return '' } }
+const setPinStore = (p) => { try { localStorage.setItem(PINKEY, hashPin(p)) } catch { /* nd */ } }
+const clearPinStore = () => { try { localStorage.removeItem(PINKEY) } catch { /* nd */ } }
+const checkPin = (p) => getPin() === hashPin(p)
+
+// Recorta la imagen a un cuadrado de 256px y la devuelve como data URL liviano (JPEG).
+function fileToAvatar(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      const s = Math.min(img.width, img.height), S = 256
+      const c = document.createElement('canvas'); c.width = S; c.height = S
+      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, S, S)
+      URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.82))
+    }
+    img.onerror = reject; img.src = url
+  })
+}
+
 function SyncSheet({ onClose, onImported }) {
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState('loading') // loading | needauth | list | empty | error
@@ -178,6 +201,11 @@ export default function App() {
   const [accounts, setAccounts] = useState([])
   const [asheet, setAsheet] = useState(null)    // cuenta (crear/editar)
   const [adetail, setAdetail] = useState(null)  // cuenta (ver detalle)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [locked, setLocked] = useState(() => !!getPin())
+  const [localProf, setLocalProf] = useState(() => { try { return JSON.parse(localStorage.getItem('bolsillo.profile') || '{}') } catch { return {} } })
+  const [defAccount, setDefAccount] = useState(() => { try { return localStorage.getItem('bolsillo.defaultAccount') || '' } catch { return '' } })
+  const [avatarUrl, setAvatarUrl] = useState(() => { try { return localStorage.getItem('bolsillo.avatar') || '' } catch { return '' } })
   const [syncOpen, setSyncOpen] = useState(false)
   const [stmtOpen, setStmtOpen] = useState(false)
   const curMonth = () => new Date().toISOString().slice(0, 7)
@@ -331,11 +359,31 @@ export default function App() {
     catch (e) { console.error('Error al borrar cuenta:', e.message) }
   }
 
+  const updateProfile = async (patch) => {
+    if ('avatar_url' in patch) {  // la foto vive en el teléfono, no en el token de la cuenta
+      setAvatarUrl(patch.avatar_url); try { localStorage.setItem('bolsillo.avatar', patch.avatar_url) } catch { /* nd */ }
+    }
+    if ('full_name' in patch) {
+      if (hasCloud) {
+        const base = session?.user?.user_metadata || {}
+        const { data, error } = await supabase.auth.updateUser({ data: { ...base, full_name: patch.full_name } })
+        if (error) console.error('Error perfil:', error.message)
+        else if (data?.user) setSession((sx) => (sx ? { ...sx, user: data.user } : sx))
+      } else {
+        const next = { ...localProf, full_name: patch.full_name }
+        setLocalProf(next); try { localStorage.setItem('bolsillo.profile', JSON.stringify(next)) } catch { /* nd */ }
+      }
+    }
+  }
+  const chooseDefaultAccount = (id) => { setDefAccount(id); try { localStorage.setItem('bolsillo.defaultAccount', id) } catch { /* nd */ } }
+  const disablePin = () => { clearPinStore(); setLocked(false) }
+
   const importMany = (added) => setTx((list) =>
     [...added, ...list].sort((a, b) => new Date(b.occurred_at) - new Date(a.occurred_at)))
 
-  const nombre = (session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || '').split(' ')[0]
-    || session?.user?.email?.split('@')[0] || ''
+  const meta = hasCloud ? (session?.user?.user_metadata || {}) : localProf
+  const avatar = avatarUrl
+  const nombre = (meta.full_name || meta.name || '').split(' ')[0] || session?.user?.email?.split('@')[0] || ''
 
   let content
   if (hasCloud && !ready) content = <div className="app splash">Cargando…</div>
@@ -351,19 +399,9 @@ export default function App() {
           <button className="iconbtn" onClick={() => setStmtOpen(true)} aria-label="Importar extracto">
             <Icon name="doc" size={18} />
           </button>
-          {hasCloud && (
-            <button className="iconbtn" onClick={() => setSyncOpen(true)} aria-label="Sincronizar con Gmail">
-              <Icon name="mail" size={18} />
-            </button>
-          )}
-          <button className="iconbtn" onClick={toggleTheme} aria-label="Cambiar tema">
-            <Icon name={dark ? 'sun' : 'moon'} size={18} />
+          <button className="avatarbtn" onClick={() => setProfileOpen(true)} aria-label="Perfil">
+            {avatar ? <img src={avatar} alt="Perfil" /> : <Icon name="user" size={18} />}
           </button>
-          {hasCloud && (
-            <button className="iconbtn" onClick={logout} aria-label="Cerrar sesión">
-              <Icon name="logout" size={18} />
-            </button>
-          )}
         </div>
       </div>
 
@@ -384,7 +422,7 @@ export default function App() {
         <Icon name="plus" size={26} />
       </button>
 
-      {sheet && <TxSheet initial={sheet} accounts={accounts} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
+      {sheet && <TxSheet initial={sheet} accounts={accounts} defaultAccount={defAccount} onClose={() => setSheet(null)} onSave={saveTx} onDelete={delTx} />}
       {bsheet && (
         <BudgetSheet initial={bsheet} existing={budgets.map((b) => b.cat)}
           onClose={() => setBsheet(null)} onSave={saveBudget} onDelete={delBudget} />
@@ -405,6 +443,12 @@ export default function App() {
           onEditAccount={(a) => { setAdetail(null); setAsheet(a) }}
           onEditTx={(t) => { setAdetail(null); setSheet(t) }} />
       )}
+      {profileOpen && (
+        <ProfileSheet meta={meta} avatar={avatar} email={session?.user?.email || ''} accounts={accounts} dark={dark} hasPin={!!getPin()}
+          onToggleTheme={toggleTheme} onLogout={logout} onSaveProfile={updateProfile}
+          defAccount={defAccount} onDefAccount={chooseDefaultAccount}
+          onEnablePin={setPinStore} onDisablePin={disablePin} onClose={() => setProfileOpen(false)} />
+      )}
     </div>
   )
 
@@ -414,6 +458,7 @@ export default function App() {
       <div className={'veil' + (veil ? ' show' : '')} aria-hidden="true">
         <div className="veil-inner"><Icon name="wallet" size={40} /><span>Hasta luego</span></div>
       </div>
+      {locked && <LockScreen onUnlock={() => setLocked(false)} />}
     </>
   )
 }
@@ -448,12 +493,12 @@ const pressDigits = (setRaw) => (k) => {
   else setRaw((r) => (r.length < 9 ? (r + k).replace(/^0+/, '') : r))
 }
 
-function TxSheet({ initial, accounts = [], onClose, onSave, onDelete }) {
+function TxSheet({ initial, accounts = [], defaultAccount = '', onClose, onSave, onDelete }) {
   const editing = !!initial?.id
   const [type, setType] = useState(editing ? (initial.amount < 0 ? 'gasto' : 'ingreso') : 'gasto')
   const [raw, setRaw] = useState(editing ? String(Math.abs(initial.amount)) : '')
   const [cat, setCat] = useState(initial?.cat || 'mercado')
-  const [account, setAccount] = useState(initial?.account || accounts[0]?.id || '')
+  const [account, setAccount] = useState(initial?.account || defaultAccount || accounts[0]?.id || '')
   const [open, setOpen] = useState(false)
   const opts = categories.filter((c) => (type === 'ingreso' ? c.id === 'ingreso' : c.id !== 'ingreso'))
   const amount = Number(raw || 0)
@@ -967,6 +1012,123 @@ function StatementSheet({ accounts, onClose, onImported, onSetBalance, onDone })
             </button>
           </>
         )}
+      </div>
+    </div>
+  )
+}
+
+const pin4 = (setRaw) => (k) => {
+  if (k === 'del') setRaw((r) => r.slice(0, -1))
+  else if (k !== '000') setRaw((r) => (r.length < 4 ? r + k : r))
+}
+
+function Dots({ n }) {
+  return <div className="pin-dots">{[0, 1, 2, 3].map((i) => <span key={i} className={i < n ? 'on' : ''} />)}</div>
+}
+
+function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, onToggleTheme, onLogout, onSaveProfile, defAccount, onDefAccount, onEnablePin, onDisablePin, onClose }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState(meta.full_name || meta.name || '')
+  const [avatar, setAvatar] = useState(avatar0 || '')
+  const [pinSet, setPinSet] = useState(hasPin)
+  const [pinMode, setPinMode] = useState(false)
+  const [pinRaw, setPinRaw] = useState('')
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+
+  const pickPhoto = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return
+    try { const url = await fileToAvatar(f); setAvatar(url); onSaveProfile({ avatar_url: url }) } catch { /* nd */ }
+  }
+  useEffect(() => {
+    if (pinMode && pinRaw.length === 4) { onEnablePin(pinRaw); setPinSet(true); setPinMode(false); setPinRaw('') }
+  }, [pinRaw, pinMode, onEnablePin])
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Perfil">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head"><span>Perfil</span></div>
+
+        <div className="prof-top">
+          <label className="prof-av">
+            {avatar ? <img src={avatar} alt="Perfil" /> : <Icon name="user" size={34} />}
+            <span className="prof-cam"><Icon name="camera" size={13} /></span>
+            <input type="file" accept="image/*" onChange={pickPhoto} style={{ display: 'none' }} />
+          </label>
+          <div className="prof-id">
+            <input className="text-in prof-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
+              onBlur={() => name.trim() && name !== (meta.full_name || meta.name) && onSaveProfile({ full_name: name.trim() })}
+              placeholder="Tu nombre" />
+            {email && <div className="prof-mail">{email}</div>}
+          </div>
+        </div>
+
+        <div className="cat-lbl">Preferencias</div>
+        <button className="prof-row" onClick={onToggleTheme}>
+          <span className="pr-ic"><Icon name={dark ? 'moon' : 'sun'} size={17} /></span>
+          <span className="pr-tx">Tema</span>
+          <span className="pr-val">{dark ? 'Oscuro' : 'Claro'}</span>
+        </button>
+        {accounts.length > 0 && (
+          <>
+            <div className="pr-sub">Cuenta por defecto para nuevos movimientos</div>
+            <div className="acct-pick">
+              <button type="button" className={'apill' + (!defAccount ? ' sel' : '')} onClick={() => onDefAccount('')}>Ninguna</button>
+              {accounts.map((a) => {
+                const k = acctKind(a.kind)
+                return (
+                  <button type="button" key={a.id} className={'apill' + (defAccount === a.id ? ' sel' : '')} onClick={() => onDefAccount(a.id)}>
+                    <span className={'apic ' + k.tint}><Icon name={k.icon} size={14} /></span>{a.name}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="cat-lbl">Seguridad</div>
+        {pinMode ? (
+          <div className="pin-set">
+            <div className="pin-msg">Elegí un PIN de 4 dígitos</div>
+            <Dots n={pinRaw.length} />
+            <Keypad onKey={pin4(setPinRaw)} />
+            <button className="savebtn ghost" onClick={() => { setPinMode(false); setPinRaw('') }}>Cancelar</button>
+          </div>
+        ) : (
+          <button className="prof-row" onClick={() => (pinSet ? (onDisablePin(), setPinSet(false)) : setPinMode(true))}>
+            <span className="pr-ic"><Icon name="lock" size={17} /></span>
+            <span className="pr-tx">Bloqueo con PIN</span>
+            <span className={'pr-val' + (pinSet ? ' on' : '')}>{pinSet ? 'Activado · Quitar' : 'Activar'}</span>
+          </button>
+        )}
+
+        <button className="savebtn ghost prof-out" onClick={onLogout}>
+          <Icon name="logout" size={16} /> Cerrar sesión
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function LockScreen({ onUnlock }) {
+  const [raw, setRaw] = useState('')
+  const [err, setErr] = useState(false)
+  useEffect(() => {
+    if (raw.length < 4) return
+    if (checkPin(raw)) onUnlock()
+    else { setErr(true); setTimeout(() => { setErr(false); setRaw('') }, 500) }
+  }, [raw, onUnlock])
+  return (
+    <div className="lock">
+      <div className="lock-in">
+        <div className="lock-logo"><Icon name="wallet" size={34} /></div>
+        <div className="lock-title">Bolsillo</div>
+        <div className="lock-msg">{err ? 'PIN incorrecto' : 'Ingresá tu PIN'}</div>
+        <div className={err ? 'shakeflash' : ''}><Dots n={raw.length} /></div>
+        <Keypad onKey={pin4(setRaw)} />
       </div>
     </div>
   )

@@ -33,6 +33,8 @@ const P = {
   pencil: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></>,
   up: <path d="M12 19V6M5 12l7-7 7 7" />,
   down: <path d="M12 5v13M5 12l7 7 7-7" />,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+  camera: <><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L19 6h0a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /><circle cx="12" cy="13" r="3.5" /></>,
   calendar: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18M8 2v4M16 2v4" /></>,
   chevL: <path d="M15 18l-6-6 6-6" />,
   chevR: <path d="M9 18l6-6-6-6" />,
