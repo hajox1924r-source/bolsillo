@@ -140,12 +140,12 @@ export async function deleteGoal(id) {
 
 export async function addManyTransactions(items) {
   if (!hasCloud) {
-    const rows = items.map((t, i) => ({ id: Date.now() + i, cat: t.cat, name: t.name, amount: t.amount, occurred_at: t.occurred_at }))
+    const rows = items.map((t, i) => ({ id: Date.now() + i, cat: t.cat, name: t.name, amount: t.amount, account: t.account || null, occurred_at: t.occurred_at }))
     localStorage.setItem(KEY, JSON.stringify([...rows, ...local()]))
     return rows
   }
   const { data: { user } } = await supabase.auth.getUser()
-  const payload = items.map((t) => ({ user_id: user.id, category: t.cat, description: t.name, amount: t.amount, occurred_at: t.occurred_at }))
+  const payload = items.map((t) => ({ user_id: user.id, category: t.cat, description: t.name, amount: t.amount, account_id: t.account || null, occurred_at: t.occurred_at }))
   const { data, error } = await supabase.from('transactions').insert(payload).select()
   if (error) throw error
   return data.map(fromRow)

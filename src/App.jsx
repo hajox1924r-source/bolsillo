@@ -179,6 +179,7 @@ export default function App() {
   const [asheet, setAsheet] = useState(null)    // cuenta (crear/editar)
   const [adetail, setAdetail] = useState(null)  // cuenta (ver detalle)
   const [syncOpen, setSyncOpen] = useState(false)
+  const [stmtOpen, setStmtOpen] = useState(false)
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
   const viewRef = useRef(null)
@@ -233,6 +234,15 @@ export default function App() {
     const nb = acc.balance + delta
     setAccounts((l) => l.map((a) => (a.id === accountId ? { ...a, balance: nb } : a)))
     try { await updateAccount(accountId, { name: acc.name, kind: acc.kind, balance: nb }) }
+    catch (e) { console.error('Error saldo:', e.message) }
+  }
+
+  // Fija el saldo de una cuenta a un valor exacto (p. ej. el \"Saldo actual\" del extracto).
+  const setAccountBalance = async (id, value) => {
+    const acc = accounts.find((a) => a.id === id)
+    if (!acc) return
+    setAccounts((l) => l.map((a) => (a.id === id ? { ...a, balance: value } : a)))
+    try { await updateAccount(id, { name: acc.name, kind: acc.kind, balance: value }) }
     catch (e) { console.error('Error saldo:', e.message) }
   }
 
@@ -335,6 +345,9 @@ export default function App() {
           <h1>{screen === 'inicio' ? 'Buenas tardes' : ''}</h1>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button className="iconbtn" onClick={() => setStmtOpen(true)} aria-label="Importar extracto">
+            <Icon name="doc" size={18} />
+          </button>
           {hasCloud && (
             <button className="iconbtn" onClick={() => setSyncOpen(true)} aria-label="Sincronizar con Gmail">
               <Icon name="mail" size={18} />
@@ -377,6 +390,10 @@ export default function App() {
           onCreate={saveGoal} onContribute={contribute} onDelete={delGoal} />
       )}
       {syncOpen && <SyncSheet onClose={() => setSyncOpen(false)} onImported={importMany} />}
+      {stmtOpen && (
+        <StatementSheet accounts={accounts} onClose={() => setStmtOpen(false)}
+          onImported={importMany} onSetBalance={setAccountBalance} />
+      )}
       {asheet && <AccountSheet initial={asheet} onClose={() => setAsheet(null)} onSave={saveAccount} onDelete={delAccount} />}
       {adetail && (
         <AccountDetail account={accounts.find((a) => a.id === adetail.id) || adetail} tx={tx}
@@ -787,6 +804,162 @@ function AccountDetail({ account, tx, onClose, onEditAccount, onEditTx }) {
               )
             })}
           </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function StatementSheet({ accounts, onClose, onImported, onSetBalance }) {
+  const [open, setOpen] = useState(false)
+  const [step, setStep] = useState(accounts.length ? 'pick' : 'noacc')
+  const [file, setFile] = useState(null)
+  const [pass, setPass] = useState('')
+  const [items, setItems] = useState([])
+  const [saldo, setSaldo] = useState(null)
+  const [sel, setSel] = useState({})
+  const [cat, setCat] = useState('mercado')
+  const [account, setAccount] = useState(accounts[0]?.id || '')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const opts = categories.filter((c) => c.id !== 'ingreso')
+
+  useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
+  const close = () => { setOpen(false); setTimeout(onClose, 280) }
+
+  const keyOf = (i) => `${i.date}|${i.desc}|${i.amount}`
+  const onPick = (e) => { const f = e.target.files?.[0]; if (f) { setFile(f); setErr(''); setStep('ask') } }
+
+  const read = async () => {
+    setStep('parsing'); setErr('')
+    try {
+      const { readStatement } = await import('./lib/statement.js')
+      const { items: found, saldo: sa } = await readStatement(file, pass)
+      const done = new Set(JSON.parse(localStorage.getItem('bolsillo.stmtids') || '[]'))
+      const fresh = found.filter((i) => !done.has(keyOf(i)))
+      setSaldo(sa)
+      if (!found.length) { setStep('empty'); return }
+      if (!fresh.length) { setStep('empty'); return }
+      setItems(fresh)
+      setSel(Object.fromEntries(fresh.map((i) => [keyOf(i), true])))
+      setStep('list')
+    } catch (e) {
+      const pw = e && (e.name === 'PasswordException' || /password/i.test(e.message || ''))
+      setErr(pw ? 'Contraseña incorrecta. Es tu número de documento, sin puntos.' : (e.message || 'No pude leer el PDF.'))
+      setStep('ask')
+    }
+  }
+
+  const toggle = (k) => setSel((x) => ({ ...x, [k]: !x[k] }))
+  const chosen = items.filter((i) => sel[keyOf(i)])
+
+  const doImport = async () => {
+    if (!chosen.length || !account) return
+    setBusy(true)
+    const payload = chosen.map((i) => ({ cat: i.amount > 0 ? 'ingreso' : cat, name: i.desc, amount: i.amount, account, occurred_at: i.date + 'T12:00:00' }))
+    try {
+      const added = await addManyTransactions(payload)
+      const done = new Set(JSON.parse(localStorage.getItem('bolsillo.stmtids') || '[]'))
+      chosen.forEach((i) => done.add(keyOf(i)))
+      localStorage.setItem('bolsillo.stmtids', JSON.stringify([...done]))
+      onImported(added)
+      if (saldo != null) await onSetBalance(account, saldo)
+      close()
+    } catch (e) { setErr(e.message); setStep('error'); setBusy(false) }
+  }
+
+  return (
+    <div className={'scrim' + (open ? ' open' : '')} onClick={close}>
+      <div className={'sheet' + (open ? ' open' : '')} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Importar extracto">
+        <div className="grab" />
+        <button className="sheet-x" onClick={close} aria-label="Cerrar"><Icon name="x" size={18} /></button>
+        <div className="sheet-head"><span>Importar extracto</span></div>
+
+        {step === 'noacc' && (
+          <div className="sync-center">
+            <div className="empty-ic"><Icon name="doc" size={30} /></div>
+            <p className="sync-msg">Primero creá una cuenta (Nequi, Daviplata…) para asignarle los movimientos del extracto.</p>
+          </div>
+        )}
+
+        {step === 'pick' && (
+          <div className="sync-center">
+            <div className="empty-ic"><Icon name="doc" size={30} /></div>
+            <p className="sync-msg">Subí el extracto PDF de Nequi. Lo abro acá mismo con tu contraseña; nunca se guarda.</p>
+            <label className="savebtn" style={{ cursor: 'pointer' }}>
+              Elegir PDF
+              <input type="file" accept="application/pdf" onChange={onPick} style={{ display: 'none' }} />
+            </label>
+          </div>
+        )}
+
+        {step === 'ask' && (
+          <>
+            <p className="sync-msg" style={{ marginTop: 4 }}><b>{file?.name}</b></p>
+            <div className="cat-lbl" style={{ marginTop: 6 }}>Contraseña del PDF (tu número de documento, sin puntos)</div>
+            <input className="text-in" type="password" inputMode="numeric" value={pass}
+              onChange={(e) => setPass(e.target.value)} placeholder="Ej: 1002345678" autoFocus />
+            {err && <p className="sync-msg" style={{ color: 'var(--expense)' }}>{err}</p>}
+            <button className="savebtn" disabled={!pass} onClick={read} style={{ marginTop: 14 }}>Leer extracto</button>
+          </>
+        )}
+
+        {step === 'parsing' && <p className="sync-msg">Leyendo el extracto…</p>}
+
+        {step === 'empty' && (
+          <div className="sync-center">
+            <div className="empty-ic"><Icon name="doc" size={30} /></div>
+            <p className="sync-msg">No encontré movimientos nuevos en este extracto (o ya los importaste antes).</p>
+            <button className="savebtn ghost" onClick={() => setStep('pick')}>Elegir otro PDF</button>
+          </div>
+        )}
+
+        {step === 'error' && (
+          <div className="sync-center">
+            <p className="sync-msg" style={{ color: 'var(--expense)' }}>{err}</p>
+            <button className="savebtn ghost" onClick={() => setStep('pick')}>Reintentar</button>
+          </div>
+        )}
+
+        {step === 'list' && (
+          <>
+            <p className="sync-msg">Encontré {items.length} movimiento{items.length === 1 ? '' : 's'}.{saldo != null ? ` Saldo del extracto: ${money(saldo)}.` : ''}</p>
+            <div className="cat-lbl" style={{ marginTop: 0 }}>¿A qué cuenta?</div>
+            <div className="acct-pick">
+              {accounts.map((a) => {
+                const k = acctKind(a.kind)
+                return (
+                  <button type="button" key={a.id} className={'apill' + (account === a.id ? ' sel' : '')} onClick={() => setAccount(a.id)}>
+                    <span className={'apic ' + k.tint}><Icon name={k.icon} size={14} /></span>{a.name}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="cat-lbl">Categoría para los gastos</div>
+            <div className="cats">
+              {opts.map((c) => (
+                <button className={'cat' + (cat === c.id ? ' sel' : '')} key={c.id} onClick={() => setCat(c.id)}>
+                  <div className={'cc ' + c.tint}><Icon name={c.icon} size={21} /></div>
+                  <span className="cl">{c.label}</span>
+                </button>
+              ))}
+            </div>
+            <div className="sync-list">
+              {items.map((i) => {
+                const k = keyOf(i)
+                return (
+                  <button key={k} type="button" className={'sync-row' + (sel[k] ? ' on' : '')} onClick={() => toggle(k)}>
+                    <span className="chk">{sel[k] && <Icon name="check" size={13} />}</span>
+                    <span className="mid"><span className="nm">{i.desc}</span><span className="mt">{i.date}</span></span>
+                    <span className={'amt tnum ' + (i.amount > 0 ? 'in' : '')}>{i.amount > 0 ? '+' : '−'}{money(i.amount)}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <button className="savebtn" disabled={!chosen.length || !account || busy} onClick={doImport}>
+              {busy ? 'Importando…' : `Importar ${chosen.length} movimiento${chosen.length === 1 ? '' : 's'}`}
+            </button>
+          </>
         )}
       </div>
     </div>
