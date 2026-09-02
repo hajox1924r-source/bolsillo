@@ -180,6 +180,9 @@ export default function App() {
   const [adetail, setAdetail] = useState(null)  // cuenta (ver detalle)
   const [syncOpen, setSyncOpen] = useState(false)
   const [stmtOpen, setStmtOpen] = useState(false)
+  const curMonth = () => new Date().toISOString().slice(0, 7)
+  const [stmtMonth, setStmtMonth] = useState(() => { try { return localStorage.getItem('bolsillo.stmtMonth') || '' } catch { return '' } })
+  const markStmtMonth = () => { const m = curMonth(); try { localStorage.setItem('bolsillo.stmtMonth', m) } catch { /* nd */ }; setStmtMonth(m) }
   const [veil, setVeil] = useState(false)
   const [fading, setFading] = useState(false)
   const viewRef = useRef(null)
@@ -365,7 +368,8 @@ export default function App() {
       </div>
 
       <div className={'view' + (fading ? ' fading' : '')} ref={viewRef}>
-        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAdetail} onAddAccount={() => setAsheet({})} />}
+        {screen === 'inicio' && <Home tx={tx} accounts={accounts} onEdit={setSheet} onEditAccount={setAdetail} onAddAccount={() => setAsheet({})}
+          remind={accounts.length > 0 && curMonth() !== stmtMonth} onImportStatement={() => setStmtOpen(true)} onDismissRemind={markStmtMonth} />}
         {screen === 'presupuestos' && <Budgets tx={tx} budgets={budgets} onEdit={setBsheet} />}
         {screen === 'reportes' && <Reports tx={tx} />}
         {screen === 'metas' && <Goals goals={goals} onEdit={setGsheet} />}
@@ -392,7 +396,7 @@ export default function App() {
       {syncOpen && <SyncSheet onClose={() => setSyncOpen(false)} onImported={importMany} />}
       {stmtOpen && (
         <StatementSheet accounts={accounts} onClose={() => setStmtOpen(false)}
-          onImported={importMany} onSetBalance={setAccountBalance} />
+          onImported={importMany} onSetBalance={setAccountBalance} onDone={markStmtMonth} />
       )}
       {asheet && <AccountSheet initial={asheet} onClose={() => setAsheet(null)} onSave={saveAccount} onDelete={delAccount} />}
       {adetail && (
@@ -811,7 +815,7 @@ function AccountDetail({ account, tx, onClose, onEditAccount, onEditTx }) {
   )
 }
 
-function StatementSheet({ accounts, onClose, onImported, onSetBalance }) {
+function StatementSheet({ accounts, onClose, onImported, onSetBalance, onDone }) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(accounts.length ? 'pick' : 'noacc')
   const [file, setFile] = useState(null)
@@ -865,6 +869,7 @@ function StatementSheet({ accounts, onClose, onImported, onSetBalance }) {
       localStorage.setItem('bolsillo.stmtids', JSON.stringify([...done]))
       onImported(added)
       if (saldo != null) await onSetBalance(account, saldo)
+      onDone && onDone()
       close()
     } catch (e) { setErr(e.message); setStep('error'); setBusy(false) }
   }

@@ -44,15 +44,27 @@ const CAT_COLOR = {
   hogar: '#14634F', ocio: '#7C5CC2', ingreso: '#2E9E6B',
 }
 
-export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount }) {
+export function Home({ tx, accounts = [], onEdit, onEditAccount, onAddAccount, remind, onImportStatement, onDismissRemind }) {
   const ingresos = tx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
   const gastos = tx.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0)
   // El balance es la suma de lo que hay en cada cuenta (lo mantenés vos). Sin cuentas, cae al flujo.
   const balance = accounts.length ? accounts.reduce((s, a) => s + a.balance, 0) : ingresos + gastos
   const days = [...new Set(tx.map((t) => fmtDay(t.occurred_at)))]
 
+  const mesActual = new Date().toLocaleDateString('es-CO', { month: 'long' })
   return (
     <>
+      {remind && (
+        <div className="remind">
+          <div className="remind-ic"><Icon name="doc" size={17} /></div>
+          <div className="remind-tx">
+            <b>Importá tu extracto</b>
+            <span>Ya es {mesActual}. Subí el extracto de Nequi para actualizar tus movimientos.</span>
+          </div>
+          <button className="remind-go" onClick={onImportStatement}>Importar</button>
+          <button className="remind-x" onClick={onDismissRemind} aria-label="Descartar"><Icon name="x" size={13} /></button>
+        </div>
+      )}
       <div className="balcard">
         <div className="lbl">Balance total</div>
         <div className="amount tnum">{balance < 0 ? '−' : ''}{money(balance)}</div>
