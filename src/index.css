@@ -558,3 +558,14 @@ button.goal:active{transform:scale(.99)}
 .lock-title{font-family:"Bricolage Grotesque",serif;font-size:22px;font-weight:700;letter-spacing:-.02em}
 .lock-msg{font-size:13px;color:var(--ink-3);margin:6px 0 2px}
 .shakeflash .pin-dots span{border-color:var(--expense)}
+
+/* Menú de la foto de perfil (ver / cambiar / quitar) */
+.prof-av-wrap{position:relative;flex:0 0 auto}
+.av-menu{position:absolute;top:80px;left:0;z-index:6;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;box-shadow:var(--shadow);overflow:hidden;min-width:158px}
+.av-menu button{display:block;width:100%;text-align:left;padding:11px 14px;background:none;border:0;color:var(--ink);
+  font-size:13px;font-weight:600;cursor:pointer}
+.av-menu button:active{background:var(--surface-2)}
+.av-menu button.danger{color:var(--expense);border-top:1px solid var(--line)}
+.av-view{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:24px;cursor:zoom-out}
+.av-view img{max-width:88%;max-height:78%;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}

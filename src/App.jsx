@@ -1033,9 +1033,13 @@ function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, on
   const [pinSet, setPinSet] = useState(hasPin)
   const [pinMode, setPinMode] = useState(false)
   const [pinRaw, setPinRaw] = useState('')
+  const [avMenu, setAvMenu] = useState(false)
+  const [viewing, setViewing] = useState(false)
+  const fileRef = useRef(null)
 
   useEffect(() => { const id = requestAnimationFrame(() => setOpen(true)); return () => cancelAnimationFrame(id) }, [])
   const close = () => { setOpen(false); setTimeout(onClose, 280) }
+  const avatarTap = () => { if (avatar) setAvMenu((v) => !v); else fileRef.current?.click() }
 
   const pickPhoto = async (e) => {
     const f = e.target.files?.[0]; if (!f) return
@@ -1053,11 +1057,20 @@ function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, on
         <div className="sheet-head"><span>Perfil</span></div>
 
         <div className="prof-top">
-          <label className="prof-av">
-            {avatar ? <img src={avatar} alt="Perfil" /> : <Icon name="user" size={34} />}
-            <span className="prof-cam"><Icon name="camera" size={13} /></span>
-            <input type="file" accept="image/*" onChange={pickPhoto} style={{ display: 'none' }} />
-          </label>
+          <div className="prof-av-wrap">
+            <button type="button" className="prof-av" onClick={avatarTap} aria-label="Foto de perfil">
+              {avatar ? <img src={avatar} alt="Perfil" /> : <Icon name="user" size={34} />}
+              <span className="prof-cam"><Icon name="camera" size={13} /></span>
+            </button>
+            {avMenu && (
+              <div className="av-menu">
+                <button type="button" onClick={() => { setAvMenu(false); setViewing(true) }}>Ver foto</button>
+                <button type="button" onClick={() => { setAvMenu(false); fileRef.current?.click() }}>Cambiar foto</button>
+                <button type="button" className="danger" onClick={() => { setAvMenu(false); setAvatar(''); onSaveProfile({ avatar_url: '' }) }}>Quitar foto</button>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" onChange={pickPhoto} style={{ display: 'none' }} />
+          </div>
           <div className="prof-id">
             <input className="text-in prof-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)}
               onBlur={() => name.trim() && name !== (meta.full_name || meta.name) && onSaveProfile({ full_name: name.trim() })}
@@ -1108,6 +1121,11 @@ function ProfileSheet({ meta, avatar: avatar0, email, accounts, dark, hasPin, on
         <button className="savebtn ghost prof-out" onClick={onLogout}>
           <Icon name="logout" size={16} /> Cerrar sesión
         </button>
+        {viewing && avatar && (
+          <div className="av-view" onClick={() => setViewing(false)}>
+            <img src={avatar} alt="Perfil" />
+          </div>
+        )}
       </div>
     </div>
   )
