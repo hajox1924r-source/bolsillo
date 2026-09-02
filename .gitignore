@@ -27,3 +27,5 @@ pnpm-debug.log*
 .idea
 .DS_Store
 Thumbs.db
+
+_to_delete/

@@ -7,7 +7,24 @@ export function CardVisual({ name, balance, kind }) {
   const grad = brandGrad(name)
   return (
     <div className={'cardvis ' + kind} style={grad ? { background: grad } : undefined}>
-      <div className="cv-top"><span className="cv-chip" /><Icon name={k.icon} size={18} /></div>
+      <span className="cv-sheen" />
+      <div className="cv-top">
+        <span className="cv-chiprow">
+          <svg className="cv-chip" viewBox="0 0 40 32" aria-hidden="true">
+            <rect x="1" y="1" width="38" height="30" rx="6" fill="#E6C877" stroke="#A9862F" strokeWidth="1" />
+            <g stroke="#A9862F" strokeWidth="1.3" fill="none" opacity="0.85">
+              <line x1="0" y1="11" x2="40" y2="11" /><line x1="0" y1="21" x2="40" y2="21" />
+              <line x1="14" y1="0" x2="14" y2="11" /><line x1="26" y1="0" x2="26" y2="11" />
+              <line x1="14" y1="21" x2="14" y2="32" /><line x1="26" y1="21" x2="26" y2="32" />
+              <rect x="14" y="11" width="12" height="10" rx="1.5" />
+            </g>
+          </svg>
+          <svg className="cv-nfc" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M8 8a6 6 0 0 1 0 8" /><path d="M11.5 5.5a10 10 0 0 1 0 13" /><path d="M15 3a14 14 0 0 1 0 18" />
+          </svg>
+        </span>
+        <Icon name={k.icon} size={18} />
+      </div>
       <div className="cv-num">•••• •••• •••• ••••</div>
       <div className="cv-bot">
         <span className="cv-name">{name || 'Sin nombre'}</span>

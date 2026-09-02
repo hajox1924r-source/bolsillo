@@ -440,13 +440,19 @@ button.goal:active{transform:scale(.99)}
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;padding:16px}
 
 /* Vista tipo tarjeta */
-.cardvis{border-radius:16px;padding:15px 16px;color:#fff;min-height:132px;border-top:1px solid rgba(255,255,255,.14);display:flex;flex-direction:column;justify-content:space-between;
+.cardvis{position:relative;overflow:hidden;border-radius:16px;padding:15px 16px;color:#fff;min-height:138px;border-top:1px solid rgba(255,255,255,.16);display:flex;flex-direction:column;justify-content:space-between;
   background:linear-gradient(135deg,#7C5CC2,#4A2E8F);box-shadow:0 8px 22px -10px rgba(0,0,0,.5);text-align:left}
 .cardvis.tarjeta{background:linear-gradient(135deg,#334A66,#141F30)}
-.cv-top{display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,.85)}
-.cv-chip{width:32px;height:23px;border-radius:5px;background:linear-gradient(135deg,#F0D68A,#B8912E);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
-.cv-num{font-size:14px;letter-spacing:.14em;color:rgba(255,255,255,.9)}
-.cv-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.cv-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;color:rgba(255,255,255,.85)}
+.cv-chiprow{display:flex;align-items:center;gap:9px}
+.cv-chip{width:38px;height:30px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.cv-nfc{width:17px;height:17px;color:rgba(255,255,255,.75)}
+/* brillo diagonal sutil */
+.cv-sheen{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 80% at 15% 0%,rgba(255,255,255,.22),rgba(255,255,255,0) 55%),
+             linear-gradient(120deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 32%,rgba(0,0,0,.14) 100%)}
+.cv-num{position:relative;z-index:1;font-size:14.5px;letter-spacing:.16em;color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.cv-bot{position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .cv-name{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
 .cv-bal{font-family:"Bricolage Grotesque",serif;font-size:19px;font-weight:700}
 .cardvis-wrap{max-width:300px;margin:2px auto 4px}
