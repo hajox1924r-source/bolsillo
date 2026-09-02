@@ -434,9 +434,10 @@ button.goal:active{transform:scale(.99)}
 .wallet{display:flex;flex-direction:column;padding:2px 2px 6px}
 .wallet .acard{width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative;
   transition:transform .18s ease}
-.wallet .acard:not(:first-child){margin-top:-76px}
+.wallet .acard:not(:first-child){margin-top:-94px}
 .wallet .acard{border-radius:16px}
-.wallet .acard:active{transform:translateY(-6px);z-index:20}
+.wallet .acard:hover{transform:translateY(-6px);z-index:20}
+.wallet .acard:active{transform:translateY(-3px) scale(.995);z-index:20}
 .acard-add{width:100%;border:1.5px dashed var(--line);border-radius:16px;background:none;color:var(--ink-3);
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;padding:16px}
 
