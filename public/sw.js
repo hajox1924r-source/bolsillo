@@ -1,6 +1,7 @@
 // Service worker mínimo para Bolsillo (PWA).
-// Estrategia: network-first para navegación, cache-first para estáticos.
-const CACHE = 'bolsillo-v1'
+// Solo cachea estáticos del MISMO origen. Nunca cachea la API (Supabase/Google)
+// ni respuestas de otro origen, para no dejar datos financieros en el caché del navegador.
+const CACHE = 'bolsillo-v2'
 const APP_SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest']
 
 self.addEventListener('install', (e) => {
@@ -20,12 +21,17 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const { request } = e
   if (request.method !== 'GET') return
-  // Navegación: intenta red, cae al cache si no hay conexión.
+
+  // Navegación: red primero, cae al shell si no hay conexión.
   if (request.mode === 'navigate') {
     e.respondWith(fetch(request).catch(() => caches.match('/index.html')))
     return
   }
-  // Estáticos: cache primero, luego red (y guarda copia).
+
+  // Solo el mismo origen se cachea; la API y todo lo externo pasa directo a la red.
+  const sameOrigin = new URL(request.url).origin === self.location.origin
+  if (!sameOrigin) return
+
   e.respondWith(
     caches.match(request).then(
       (hit) =>
